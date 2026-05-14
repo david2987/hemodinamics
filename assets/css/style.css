@@ -1,0 +1,51 @@
+/* Imports */
+@import url(http://fonts.googleapis.com/css?family=Oswald:300);
+@import url(http://fonts.googleapis.com/css?family=Open+Sans);
+
+.has-error small{color:red;font-weight:normal;margin-left:5px;}
+#jumbotron-index{margin-top:50px;background:#666;color:#eee;}
+
+th{
+    color: white;
+    background-color:#206773;
+    border: 1px solid #000;
+}
+input{
+    border-bottom-color: #666;
+    border-left-color: #666;
+    border-right-color: #666;
+    border-top-color: #666;
+    border-style: solid;
+    border-width: 1px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    font-family: Arial;
+    font-size: 9pt;
+    color: #000;
+    outline: 0;
+}
+
+#Grilla tbody tr:hover{
+    background-color: aqua !important;
+
+}
+
+.botonFiltro{
+    background-repeat: no-repeat;
+    margin-bottom: 0;
+    margin-left: 7px;
+    margin-right: 7px;
+    margin-top: 7px;
+    padding-bottom: 5px;
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-top: 5px;
+    background-color: #206773;
+    border-style: none;
+    font-family: Arial;
+    font-size: 9pt;
+    font-weight: bold;
+    color: #fff;
+}
