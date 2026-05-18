@@ -1,7 +1,7 @@
 <?php include_once 'view/header.php'; ?>
 
 <h1 class="page-header">Panel de Presupuestos</h1>
-<div style="width: 60% !important;">
+<div style="width: 100% !important;">
 <form name="formu" id='formu' method="post" action="index.php">
 
 <?php 
@@ -11,143 +11,178 @@ $cantidadTotalRegistro = 0;
 
 if(empty($_GET['excel'])){ ?>
 
-<table style=" border-spacing: 5px;
-    border-collapse: separate;"  style="width: 90% !important;">
-    <tr> 
-        <td>N° Pto</td>
-            <td><input type="text" name="cod_presupuesto" value="<?php if(isset($_POST['cod_presupuesto'])){echo $_POST['cod_presupuesto']; } ?>" style="border: 2px solid #888;border-radius: 10px;color: #888;font-family: inherit;font-weight: 400;margin: 0;min-width: 300px;"></td>
-        <td>Cliente</td>
-            <td><input type="text" name='nombre' id="cod_cliente" value="<?php if(isset($_POST['nombre'])){echo $_POST['nombre']; } ?>"  ></td>
-        <td>Medico</td>
-            <td><input type="text" name="mediconombre" id="cod_medico" value="<?php if(isset($_POST['mediconombre'])){echo $_POST['mediconombre']; } ?>"> </td>    
-        <td>Paciente</td>
-            <td><input type="text" name="presupuestopaciente" style="border: 2px solid #888;border-radius: 10px;color: #888;font-family: inherit;font-weight: 400;margin: 0;min-width: 300px;" value="<?php if(isset($_POST['presupuestopaciente'])){echo $_POST['presupuestopaciente']; } ?>"></td>
-    </tr>
-    <tr>
-        <td>Descrip. Producto</td>
-        <td> 
+<div class="filters-card">
+    <div class="filters-title">
+        <i class="fa-solid fa-filter" style="color: #206773;"></i>
+        <span>Filtros de Búsqueda</span>
+    </div>
+    
+    <div class="filters-grid">
+        <!-- N° Pto -->
+        <div class="filter-group">
+            <label>N° Pto</label>
+            <input type="text" name="cod_presupuesto" value="<?php if(isset($_POST['cod_presupuesto'])){echo $_POST['cod_presupuesto']; } ?>">
+        </div>
+
+        <!-- Cliente -->
+        <div class="filter-group">
+            <label>Cliente</label>
+            <input type="text" name='nombre' id="cod_cliente" value="<?php if(isset($_POST['nombre'])){echo $_POST['nombre']; } ?>">
+        </div>
+
+        <!-- Medico -->
+        <div class="filter-group">
+            <label>Medico</label>
+            <input type="text" name="mediconombre" id="cod_medico" value="<?php if(isset($_POST['mediconombre'])){echo $_POST['mediconombre']; } ?>">
+        </div>
+
+        <!-- Paciente -->
+        <div class="filter-group">
+            <label>Paciente</label>
+            <input type="text" name="presupuestopaciente" value="<?php if(isset($_POST['presupuestopaciente'])){echo $_POST['presupuestopaciente']; } ?>">
+        </div>
+
+        <!-- Descrip. Producto -->
+        <div class="filter-group">
+            <label>Descrip. Producto</label>
             <input type="hidden" name="CodProducto" id="codprod" size="30" value="<?php if(isset($_POST['CodProducto'])){  echo $_POST['CodProducto']; } ?>" >
             <input type="text" name="Producto" id="codprod1" size="30" value="<?php if(isset($_POST['Producto'])){  echo $_POST['Producto']; } ?>" >
-        </td>  
-        <td> Estado</td>
-        <td>    
-            <div class="multiselect" style="width: 250px;">
+        </div>
+
+        <!-- Estado -->
+        <div class="filter-group">
+            <label>Estado</label>
+            <div class="multiselect">
                 <div class="selectBox" onclick="showCheckboxes()">
-                <select>
-                    <?php 
+                    <select>
+                        <?php 
                         $CantEsp = 0;
-                    for($i=1;$i<=10;$i++)
-                    {
-                        if(!empty($_POST['Esp'.$i]))
-                        {
-                            $CantEsp ++;
-                        }       
-                    }
-                    if($CantEsp >= 1)
-                    {                        
-                        echo  "<option>";
                         for($i=1;$i<=10;$i++)
                         {
-                            $EspFil = 0;
                             if(!empty($_POST['Esp'.$i]))
-                            { 
-                                $EspFil .= $_POST['Esp'.$i];                     
-                                foreach($this->model->buscadescripestado($EspFil) as $d): ;                                                                           
-                                    echo $d->EspDes.'-';
-                                endforeach;
-                            }
-                        }                            
-                        echo "</option>" ;
-                    }else{   
-
-                    ?>
-                    <option>Seleccione  Estado/s</option>
-                    <?php } ?>
-                </select>
-                <div class="overSelect"></div>
+                            {
+                                $CantEsp ++;
+                            }       
+                        }
+                        if($CantEsp >= 1)
+                        {                        
+                            echo  "<option>";
+                            for($i=1;$i<=10;$i++)
+                            {
+                                $EspFil = 0;
+                                if(!empty($_POST['Esp'.$i]))
+                                { 
+                                    $EspFil .= $_POST['Esp'.$i];                     
+                                    foreach($this->model->buscadescripestado($EspFil) as $d): ;                                                                           
+                                        echo $d->EspDes.'-';
+                                    endforeach;
+                                }
+                            }                            
+                            echo "</option>" ;
+                        }else{   
+                        ?>
+                        <option>Seleccione  Estado/s</option>
+                        <?php } ?>
+                    </select>
+                    <div class="overSelect"></div>
                 </div>
                 <div id="checkboxes" style="z-index: 9000; position: absolute;width:inherit;background-color:white">
-                                
-                <?php $Cann=0; foreach($this->model->buscaestado() as $e): ?>                    
-                    <label for="<?php echo $e->EspCod; $Cann ++;  ?>" onclick="  
-                    if(document.getElementById('Esp<?php echo $Cann; ?>').checked == true)
-                    {
-                    document.getElementById('Esp<?php echo $Cann; ?>').checked = false;
-                    }else
-                    {
-                    document.getElementById('Esp<?php echo $Cann; ?>').checked = true;
-                    }
-                    
-                    ">   
-                <input type="checkbox" id="Esp<?php echo $Cann; ?>" name="Esp<?php echo $Cann; ?>" value="<?php echo $e->EspCod; ?>"                     
-                <?php 
-                    if(isset($_POST['Esp'.$Cann]))
-                    { 
-                        if($_POST['Esp'.$Cann] == $e->EspCod)
-                        { 
-                            echo ' checked';
-                        }                            
-                    } 
-                ?> 
-                    /> <?php echo $e->EspDes;  ?></label>
-            <?php endforeach; ?>  
-                </div>
-            </div>                
-        </td>    
-        <td> Coordinador</td>
-            <td><input type="text" name="VndNom" id="VndNom" value="<?php if(isset($_POST['VndNom'])){echo $_POST['VndNom']; } ; ?>"></td>                    
-           <td>Seguimiento</td>
-           <td>          
-                <select name="Seguimiento"  style="font-weight: bold;">
-                    <option value="">Seleccionar Opción</option>
-                    <option value="S" > SI</option>
-                    <option value="N"  >NO</option>
-                </select>
-           </td>          
-    </tr>
-    <tr>
-    <td>Desde Fecha Ppto.</td>
-    
-    <td><input type="date" name="fechaDD" value="<?php if(isset($_POST['fechaDD'])){echo $_POST['fechaDD']; } ?>"></td>	
-    
-    <td>Hasta fecha Ppto.</td>
-        <td><input type="date"  name="fechaHH" value="<?php if(isset($_POST['fechaHH'])){echo $_POST['fechaHH']; } ?>"></td>	
-    <td> Usuario Carga </td>
-    <td>
-    <select name="Usrcod" id="Usrcod" style="width: 264px;">
-        <option value="">Seleccione una opción</option>
-        <?php foreach($this->model->buscarusuario() as $s): ?>
-                <option value="<?php echo $s->UsrCod; ?>" 
-                <?php 
-                    if(isset($_POST['Usrcod']))
-                    { 
-                        if($_POST['Usrcod'] == $s->UsrCod)
-                        { 
-                            echo 'selected';
+                    <?php $Cann=0; foreach($this->model->buscaestado() as $e): ?>                    
+                        <label for="<?php echo $e->EspCod; $Cann ++;  ?>" onclick="  
+                        if(document.getElementById('Esp<?php echo $Cann; ?>').checked == true)
+                        {
+                            document.getElementById('Esp<?php echo $Cann; ?>').checked = false;
+                        }else
+                        {
+                            document.getElementById('Esp<?php echo $Cann; ?>').checked = true;
                         }
-                            
-                    } 
-                ?> > <?php echo $s->UsrInf;   ?> </option>
-            <?php endforeach; ?>
-        </select>
-    </td>
-    <td> Licitacion</td>
-    <td>
-        <select name="Licitacion" style="font-weight: bolder;">
-            <option value="">Seleccionar Opción</option>             
-            <option value="2" <?php if((isset($_POST['Licitacion']))) { if($_POST['Licitacion'] == 2){ echo 'selected';} } ?>>NOL</option>     
-            <option value="1" <?php if((isset($_POST['Licitacion']))){ if($_POST['Licitacion'] == 1){ echo 'selected';} } ?> >LIC</option>                 
-        </select>
-    </td>
-    </tr>
-    <tr>
-        <td>Servicio</td>	
-            <td><input type="text" name="Servicio" id="Hospcod" value="<?php if(isset($_POST['Hospcod'])){echo $_POST['Hospcod']; } ?>"></td>
-        <td>Categoria</td>  
-        <td>
+                        ">   
+                        <input type="checkbox" id="Esp<?php echo $Cann; ?>" name="Esp<?php echo $Cann; ?>" value="<?php echo $e->EspCod; ?>"                     
+                        <?php 
+                            if(isset($_POST['Esp'.$Cann]))
+                            { 
+                                if($_POST['Esp'.$Cann] == $e->EspCod)
+                                { 
+                                    echo ' checked';
+                                }                            
+                            } 
+                        ?> 
+                        /> <?php echo $e->EspDes;  ?></label>
+                    <?php endforeach; ?>  
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordinador -->
+        <div class="filter-group">
+            <label>Coordinador</label>
+            <input type="text" name="VndNom" id="VndNom" value="<?php if(isset($_POST['VndNom'])){echo $_POST['VndNom']; } ; ?>">
+        </div>
+
+        <!-- Seguimiento -->
+        <div class="filter-group">
+            <label>Seguimiento</label>
+            <select name="Seguimiento">
+                <option value="">Seleccionar Opción</option>
+                <option value="S" <?php if(isset($_POST['Seguimiento']) && $_POST['Seguimiento'] == 'S') echo 'selected'; ?>>SI</option>
+                <option value="N" <?php if(isset($_POST['Seguimiento']) && $_POST['Seguimiento'] == 'N') echo 'selected'; ?>>NO</option>
+            </select>
+        </div>
+
+        <!-- Desde Fecha Ppto -->
+        <div class="filter-group">
+            <label>Desde Fecha Ppto.</label>
+            <input type="date" name="fechaDD" value="<?php if(isset($_POST['fechaDD'])){echo $_POST['fechaDD']; } ?>">
+        </div>
+
+        <!-- Hasta Fecha Ppto -->
+        <div class="filter-group">
+            <label>Hasta fecha Ppto.</label>
+            <input type="date"  name="fechaHH" value="<?php if(isset($_POST['fechaHH'])){echo $_POST['fechaHH']; } ?>">
+        </div>
+
+        <!-- Usuario Carga -->
+        <div class="filter-group">
+            <label>Usuario Carga</label>
+            <select name="Usrcod" id="Usrcod">
+                <option value="">Seleccione una opción</option>
+                <?php foreach($this->model->buscarusuario() as $s): ?>
+                    <option value="<?php echo $s->UsrCod; ?>" 
+                    <?php 
+                        if(isset($_POST['Usrcod']))
+                        { 
+                            if($_POST['Usrcod'] == $s->UsrCod)
+                            { 
+                                echo 'selected';
+                            }
+                        } 
+                    ?> > <?php echo $s->UsrInf;   ?> </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- Licitacion -->
+        <div class="filter-group">
+            <label>Licitacion</label>
+            <select name="Licitacion">
+                <option value="">Seleccionar Opción</option>             
+                <option value="2" <?php if((isset($_POST['Licitacion']))) { if($_POST['Licitacion'] == 2){ echo 'selected';} } ?>>NOL</option>     
+                <option value="1" <?php if((isset($_POST['Licitacion']))){ if($_POST['Licitacion'] == 1){ echo 'selected';} } ?> >LIC</option>                 
+            </select>
+        </div>
+
+        <!-- Servicio -->
+        <div class="filter-group">
+            <label>Servicio</label>
+            <input type="text" name="Servicio" id="Hospcod" value="<?php if(isset($_POST['Hospcod'])){echo $_POST['Hospcod']; } ?>">
+        </div>
+
+        <!-- Categoria -->
+        <div class="filter-group">
+            <label>Categoria</label>
             <select name="Categoria" id="CprCod">
-            <option value="">Todas las Categorias</option>
-            <?php foreach($this->model->buscacategoria() as $s): ?>
+                <option value="">Todas las Categorias</option>
+                <?php foreach($this->model->buscacategoria() as $s): ?>
                     <option value="<?php echo $s->CprCod; ?>" 
                     <?php 
                         if(isset($_POST['Categoria']))
@@ -156,98 +191,103 @@ if(empty($_GET['excel'])){ ?>
                             { 
                                 echo 'selected';
                             }
-                                
                         } 
                     ?> > <?php echo $s->CprDes;  ?> </option>
                 <?php endforeach; ?>
             </select>
-        </td>              
-        <td>
-             <button name="buscar"  onclick="renovar('buscar')" class="botonFiltro">Buscar</button>
-             <a class="btn btn-success" href="?c=presupuesto&a=Crud" style="margin-left: 10px;">Nuevo Presupuesto</a>
-            </div>
-        </td>
-        <td>
-            <a class="botonFiltro" href="<?php echo $Rutaapp; ?>consultapto/limpia.php"> Limpiar</a>
+        </div>
 
-            <button class="botonFiltro" onclick="abre('<?php echo $RutaappTomcat; ?>hemodinamicsJavaEnviroment/servlet/mailautorizados',400,300)"> Enviar Email Autorizados</button></td>
-            <td>
-                <b>Mostrar Registro</b>  
-                <?php $xregistro =  !isset($_POST['xregistro'])?20:$_POST['xregistro'];?>         
-                <select name="xregistro">                
-                    <option value="10" <?php if ($xregistro == 10) {echo 'selected' ;} ?>>10</option>
-                    <option value="20" <?php if ($xregistro == 20) {echo 'selected' ;} ?>>20</option>
-                    <option value="30" <?php if( $xregistro == 30) {echo 'selected' ;} ?>>30</option>
-                    <option value="40" <?php if( $xregistro == 40) {echo 'selected' ;} ?>>40</option>
-                    <option value="100" <?php if( $xregistro == 100) {echo 'selected' ;} ?>>100</option>
-                    <option value="200" <?php if( $xregistro == 200) {echo 'selected' ;} ?>>200</option>
-                </select>        
-            </td>
-            <td>
-                <button  onclick="renovar('ImprimirReporte')"  class="botonFiltro" name="ImprimirExcel" >Reporte Xls</button>
-            </td>            
-    </tr>
-    <tr>
-        <td>Fecha de Aut. </td><td><input type="date" name="fechaautorizacion" value="<?php if(isset($_POST['fechaautorizacion'])){echo $_POST['fechaautorizacion']; } ?>">  </td>
-        <td>Autorizó Precio </td>
-        <td>
+        <!-- Fecha de Aut -->
+        <div class="filter-group">
+            <label>Fecha de Aut.</label>
+            <input type="date" name="fechaautorizacion" value="<?php if(isset($_POST['fechaautorizacion'])){echo $_POST['fechaautorizacion']; } ?>">
+        </div>
+
+        <!-- Autorizó Precio -->
+        <div class="filter-group">
+            <label>Autorizó Precio</label>
             <select name="PresupPrc">
-                
                 <option value="">Seleccione Usuario</option>
-            <?php
-                         
-            foreach($this->model->buscarUsuarioAutPrecio() as $c):                 
-                $chk = !empty($_POST['PresupPrc']) && $_POST['PresupPrc'] == $c->PapUsr?'selected':'';?>                
-                <option value="<?php  echo trim($c->PapUsr); ?>" <?php echo $chk ; ?> ><?php echo $c->UsrInf; ?></option>                
-            <?php endforeach;    ?>
+                <?php foreach($this->model->buscarUsuarioAutPrecio() as $c):                 
+                    $chk = !empty($_POST['PresupPrc']) && $_POST['PresupPrc'] == $c->PapUsr?'selected':'';?>                
+                    <option value="<?php echo trim($c->PapUsr); ?>" <?php echo $chk ; ?> ><?php echo $c->UsrInf; ?></option>                
+                <?php endforeach; ?>
             </select>
-        </td>
-        <td><b>Seguimiento Presupuesto</b></td>
-        <td>
+        </div>
+
+        <!-- Seguimiento Presupuesto -->
+        <div class="filter-group">
+            <label>Seguimiento Presupuesto</label>
             <select name="PresupUsuSeg">
                 <option value="">Seleccione Usuario</option>
-            <?php                         
-            foreach($this->model->buscarUsuarioSegPresupuesto() as $d): 
-                $chk2 = !empty($_POST['PresupUsuSeg']) && $_POST['PresupUsuSeg'] == $d->PasUsr?'selected':'';
-            ?>
-                   <option value="<?php  echo $d->PasUsr ?>" <?php echo $chk2 ; ?> ><?php echo $d->UsrInf; ?></option>                
-            <?php endforeach;    ?>
+                <?php foreach($this->model->buscarUsuarioSegPresupuesto() as $d): 
+                    $chk2 = !empty($_POST['PresupUsuSeg']) && $_POST['PresupUsuSeg'] == $d->PasUsr?'selected':'';
+                ?>
+                    <option value="<?php  echo $d->PasUsr ?>" <?php echo $chk2 ; ?> ><?php echo $d->UsrInf; ?></option>                
+                <?php endforeach; ?>
             </select>
-        </td>        
-    </tr>
-    <tr>
-    <?php  
-    if(isset($_POST['xregistro'] ))
-    { 
-        $limit = $_POST['xregistro']; 
-    }else{
-         $limit = 20;
-    }
-    if($limit == 1)
-    {
-       $limit = 20;
-    }
-   if(!empty($_GET['excel'])) { $limit = 1000; } 
+        </div>
 
-    
-     //$where= buscar(); foreach($this->model->ListarcontTot($where,$limit) as $c): ?>    
-        <td>Cant. Registros</td> <td><b><div id="cantRegistroMostrar"> <div> <?php // echo $c->CantRegistro; ?></b></td>                   
-    <?php // endforeach;    ?>
-    </tr>
-    <tr>
-    <?php 
-     $where= buscar();
-        //foreach($this->model->ListarTotImporte($where,$limit) as $c): ?>
-        <td>Total Importe</td> <td><b>$<?php //echo number_format( $c->totimporte, 0, ',', '.'); ?></b></td>                   
-    <?php // endforeach;    ?>
-    </tr>
+        <!-- Mostrar Registro -->
+        <div class="filter-group">
+            <label>Mostrar Registro</label>
+            <?php $xregistro = !isset($_POST['xregistro'])?20:$_POST['xregistro'];?>         
+            <select name="xregistro">                
+                <option value="10" <?php if ($xregistro == 10) {echo 'selected' ;} ?>>10</option>
+                <option value="20" <?php if ($xregistro == 20) {echo 'selected' ;} ?>>20</option>
+                <option value="30" <?php if( $xregistro == 30) {echo 'selected' ;} ?>>30</option>
+                <option value="40" <?php if( $xregistro == 40) {echo 'selected' ;} ?>>40</option>
+                <option value="100" <?php if( $xregistro == 100) {echo 'selected' ;} ?>>100</option>
+                <option value="200" <?php if( $xregistro == 200) {echo 'selected' ;} ?>>200</option>
+            </select>
+        </div>
+    </div>
 
-</table>
-<?php } else{
+    <!-- Action Buttons Row -->
+    <div class="filters-actions">
+        <button type="submit" name="buscar" onclick="renovar('buscar')" class="btn btn-filter-search">
+            <i class="fa-solid fa-magnifying-glass"></i> Buscar
+        </button>
+        
+        <a class="btn btn-filter-clear" href="<?php echo $Rutaapp; ?>consultapto/limpia.php">
+            <i class="fa-solid fa-rotate-left"></i> Limpiar
+        </a>
+        
+        <button type="button" class="btn btn-filter-action" onclick="abre('<?php echo $RutaappTomcat; ?>hemodinamicsJavaEnviroment/servlet/mailautorizados',400,300)">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Email Autorizados
+        </button>
+        
+        <button type="submit" onclick="renovar('ImprimirReporte')" class="btn btn-filter-action" name="ImprimirExcel">
+            <i class="fa-solid fa-file-excel" style="color: #107c41;"></i> Reporte Xls
+        </button>
+
+        <!-- Dynamic Metrics Badge -->
+        <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+            <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 500; font-size: 13px;">
+                Registros: <strong id="cantRegistroMostrar" style="color: #0f172a;"></strong>
+            </span>
+        </div>
+    </div>
+</div>
+
+<?php 
+if(isset($_POST['xregistro'] ))
+{ 
+    $limit = $_POST['xregistro']; 
+}else{
+     $limit = 20;
+}
+if($limit == 1)
+{
+   $limit = 20;
+}
+if(!empty($_GET['excel'])) { $limit = 1000; } 
 
 $where= buscar();
+} else {
+    $where= buscar();
 }?>
-<table class="table table-striped" id="Grilla" style="width: 74% !important;">
+<table class="table table-striped" id="Grilla" style="width: 100% !important;">
     <thead>
         <tr>
           <!--

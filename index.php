@@ -1,38 +1,37 @@
 <?php
 ini_set('display_errors', 1);
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'model/database.php';
 
+// Determine controller
 if(!isset($_GET['p']))
 {
     $controller = 'presupuesto';
 }else{
-
     $controller = $_GET['p'];
 }
 
-
-// Todo esta lógica hara el papel de un FrontController
-if(!isset($_REQUEST['c']))
-    {
-
-    require_once "controller/$controller.controller.php";
-    $controller = ucwords($controller) . 'Controller';
-    $controller = new $controller;
-    $controller->Index();    
-}
-else
-{
-    
-    // Obtenemos el controlador que queremos cargar
+if(isset($_REQUEST['c'])) {
     $controller = strtolower($_REQUEST['c']);
-    $accion = isset($_REQUEST['a']) ? $_REQUEST['a'] : 'Index';
-    
-    // Instanciamos el controlador
-    require_once "controller/$controller.controller.php";
-    $controller = ucwords($controller) . 'Controller';
-    $controller = new $controller;
-    
-    // Llama la accion
-    call_user_func( array( $controller, $accion ) );
 }
+
+// Session authentication check
+if (!isset($_SESSION['user']) && $controller !== 'auth') {
+    header('Location: index.php?c=auth&a=Login');
+    exit;
+}
+
+$accion = isset($_REQUEST['a']) ? $_REQUEST['a'] : 'Index';
+
+// Front Controller instantiation
+require_once "controller/$controller.controller.php";
+$controllerClass = ucwords($controller) . 'Controller';
+$controllerInstance = new $controllerClass;
+
+// Execute action
+call_user_func( array( $controllerInstance, $accion ) );
+?>
