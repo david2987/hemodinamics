@@ -11,15 +11,15 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>cod_medico</th>
-            <th>localidad</th>
-            <th>mediconombre</th>
-            <th>medicodomicilio</th>
-            <th>medicocod_postal</th>
-            <th>medicotelefono</th>
-            <th>medicocelular</th>
-            <th>medicoemail</th>
-            <th>MelLocCod</th>
+            <th>Código</th>
+            <th>Localidad</th>
+            <th>Médico</th>
+            <th>Domicilio</th>
+            <th>Cod. Postal</th>
+            <th>Teléfono</th>
+            <th>Celular</th>
+            <th>Email</th>
+            <th>Código Localidad</th>
             <th style="width:120px;"></th>
         </tr>
     </thead>

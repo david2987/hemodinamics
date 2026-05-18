@@ -319,7 +319,7 @@
 
             <div class="login-footer">
                 <p>&copy; <?php echo date('Y'); ?> Hemodinamics S.R.L. Todos los derechos reservados.</p>
-                <p>Desarrollado con <i class="fa-solid fa-heart" style="color: #ef4444;"></i> para la excelencia médica.</p>
+                
             </div>
 
         </div>

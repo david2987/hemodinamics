@@ -10,11 +10,11 @@
 <form action="?c=categoriaclientes&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="CcliCod" value="<?php echo htmlspecialchars($alm->CcliCod); ?>" />
     <div class="form-group">
-        <label>CcliCod</label>
+        <label>Código</label>
         <input type="text" class="form-control" value="<?php echo htmlspecialchars($alm->CcliCod); ?>" readonly />
     </div>
     <div class="form-group">
-        <label>CcliDes</label>
+        <label>Descripción</label>
         <input type="text" name="CcliDes" value="<?php echo htmlspecialchars($alm->CcliDes); ?>" class="form-control" placeholder="Ingrese CcliDes" />
     </div>
     <hr />

@@ -11,13 +11,12 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>UsrCod</th>
-            <th>UsrPas</th>
-            <th>UsrInf</th>
-            <th>GruCod</th>
-            <th>UsrAdm</th>
-            <th>SucCod</th>
-            <th>UsrAct</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Grupo</th>
+            <th>Administrador</th>
+            <th>Sucursal</th>
+            <th>Estado</th>
             <th style="width:120px;"></th>
         </tr>
     </thead>
@@ -25,9 +24,8 @@
     <?php foreach($items as $r): ?>
         <tr>
             <td><?php echo htmlspecialchars($r->UsrCod); ?></td>
-            <td><?php echo htmlspecialchars($r->UsrPas); ?></td>
             <td><?php echo htmlspecialchars($r->UsrInf); ?></td>
-            <td><?php echo htmlspecialchars($r->GruCod); ?></td>
+            <td><?php echo htmlspecialchars(!empty($r->grupo_nombre) ? $r->grupo_nombre : $r->GruCod); ?></td>
             <td><?php echo htmlspecialchars($r->UsrAdm); ?></td>
             <td><?php echo htmlspecialchars($r->SucCod); ?></td>
             <td><?php echo htmlspecialchars($r->UsrAct); ?></td>

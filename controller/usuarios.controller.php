@@ -27,6 +27,10 @@ class UsuariosController {
         if(isset($_REQUEST['UsrCod'])) {
             $alm = $this->model->Obtener($_REQUEST['UsrCod']);
         }
+        require_once 'model/sisgru.php';
+        $sisgruModel = new Sisgru();
+        $grupos = $sisgruModel->ListarAll();
+
         require_once 'view/header.php';
         require_once 'view/usuarios/form.php';
         require_once 'view/footer.php';

@@ -11,16 +11,16 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>HospCod</th>
-            <th>HospDesc</th>
-            <th>HospMail</th>
-            <th>HospCUIT</th>
-            <th>HospTel</th>
-            <th>HospDom</th>
-            <th>HospCUFE</th>
-            <th>HospLoc</th>
-            <th>HospDesc2</th>
-            <th>HospLocCod</th>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Email</th>
+            <th>CUIT</th>
+            <th>Teléfono</th>
+            <th>Domicilio</th>
+            <th>CUFE</th>
+            <th>Localidad</th>
+            <th>Descripción 2</th>
+            <th>Código Localidad</th>
             <th style="width:120px;"></th>
         </tr>
     </thead>

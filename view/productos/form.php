@@ -10,31 +10,35 @@
 <form action="?c=productos&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="cod_producto" value="<?php echo htmlspecialchars($alm->cod_producto); ?>" />
     <div class="form-group">
-        <label>cod_producto</label>
+        <label>Código</label>
         <input type="text" class="form-control" value="<?php echo htmlspecialchars($alm->cod_producto); ?>" readonly />
     </div>
     <div class="form-group">
-        <label>detalle</label>
+        <label>Detalle</label>
         <input type="text" name="detalle" value="<?php echo htmlspecialchars($alm->detalle); ?>" class="form-control" placeholder="Ingrese detalle" />
     </div>
     <div class="form-group">
-        <label>producto_titulo</label>
+        <label>Título</label>
         <input type="text" name="producto_titulo" value="<?php echo htmlspecialchars($alm->producto_titulo); ?>" class="form-control" placeholder="Ingrese producto_titulo" />
     </div>
     <div class="form-group">
-        <label>producto_precio</label>
+        <label>Precio</label>
         <input type="text" name="producto_precio" value="<?php echo htmlspecialchars($alm->producto_precio); ?>" class="form-control" placeholder="Ingrese producto_precio" />
     </div>
     <div class="form-group">
-        <label>productoPrecDis</label>
+        <label>Precio Diferenciado</label>
         <input type="text" name="productoPrecDis" value="<?php echo htmlspecialchars($alm->productoPrecDis); ?>" class="form-control" placeholder="Ingrese productoPrecDis" />
     </div>
     <div class="form-group">
-        <label>CptId</label>
-        <input type="text" name="CptId" value="<?php echo htmlspecialchars($alm->CptId); ?>" class="form-control" placeholder="Ingrese CptId" />
+        <label>Categoría</label>
+        <input type="text" id="categoria_suggest" name="categoria_nombre" value="<?php echo htmlspecialchars(!empty($alm->categoria_nombre) ? $alm->categoria_nombre : $alm->CptId); ?>" class="form-control" placeholder="Ingrese categoría" />
     </div>
     <div class="form-group">
-        <label>producto_fechaaviso</label>
+        <label>Código Categoría</label>
+        <input type="text" id="CptId" name="CptId" value="<?php echo htmlspecialchars($alm->CptId); ?>" class="form-control" readonly placeholder="Código Categoría (Se autocompleta)" />
+    </div>
+    <div class="form-group">
+        <label>Fecha Aviso</label>
         <input type="text" name="producto_fechaaviso" value="<?php echo htmlspecialchars($alm->producto_fechaaviso); ?>" class="form-control" placeholder="Ingrese producto_fechaaviso" />
     </div>
     <div class="form-group">
@@ -46,3 +50,31 @@
         <button class="btn btn-success">Guardar</button>
     </div>
 </form>
+
+<script>
+$(document).ready(function() {
+    var options = {
+        url: function(phrase) {
+            return "view/buscacategoriaproducto.php?phrase=" + phrase + "&format=json";
+        },
+        getValue: function(element) {
+            return element.name;
+        },
+        list: {
+            maxNumberOfElements: 12,
+            onSelectItemEvent: function() {
+                var code = $("#categoria_suggest").getSelectedItemData().code;
+                $("#CptId").val(code).trigger("change");
+            },
+            match: {
+                enabled: true
+            },
+            sort: {
+                enabled: true
+            }
+        },
+        theme: "plate-dark"
+    };
+    $("#categoria_suggest").easyAutocomplete(options);
+});
+</script>

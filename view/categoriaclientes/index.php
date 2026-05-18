@@ -11,8 +11,8 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>CcliCod</th>
-            <th>CcliDes</th>
+            <th>Código</th>
+            <th>Descripción</th>
             <th style="width:120px;"></th>
         </tr>
     </thead>

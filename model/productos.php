@@ -24,9 +24,13 @@ class Productos {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['detalle LIKE :search', 'producto_titulo LIKE :search', 'producto_aviso LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['productos.detalle LIKE :search', 'productos.producto_titulo LIKE :search', 'productos.producto_aviso LIKE :search']);
             }
-            $sql = "SELECT * FROM productos $where LIMIT :limit OFFSET :offset";
+            $sql = "SELECT productos.*, categoriaproductos.CptDes AS categoria_nombre 
+                    FROM productos 
+                    LEFT JOIN categoriaproductos ON productos.CptId = categoriaproductos.CptId 
+                    $where 
+                    LIMIT :limit OFFSET :offset";
             $stm = $this->pdo->prepare($sql);
             if (!empty($search)) $stm->bindValue(':search', $search, PDO::PARAM_STR);
             $stm->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -43,7 +47,7 @@ class Productos {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['detalle LIKE :search', 'producto_titulo LIKE :search', 'producto_aviso LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['productos.detalle LIKE :search', 'productos.producto_titulo LIKE :search', 'productos.producto_aviso LIKE :search']);
             }
             $sql = "SELECT count(*) FROM productos $where";
             $stm = $this->pdo->prepare($sql);
@@ -57,7 +61,10 @@ class Productos {
 
     public function Obtener($id) {
         try {
-            $stm = $this->pdo->prepare("SELECT * FROM productos WHERE cod_producto = ?");
+            $stm = $this->pdo->prepare("SELECT productos.*, categoriaproductos.CptDes AS categoria_nombre 
+                                        FROM productos 
+                                        LEFT JOIN categoriaproductos ON productos.CptId = categoriaproductos.CptId 
+                                        WHERE productos.cod_producto = ?");
             $stm->execute(array($id));
             return $stm->fetch(PDO::FETCH_OBJ);
         } catch(Exception $e) {
@@ -76,7 +83,7 @@ class Productos {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            if (!empty($data->cod_producto)) {
                 $sql = "UPDATE productos SET detalle = ?, producto_titulo = ?, producto_precio = ?, productoPrecDis = ?, CptId = ?, producto_fechaaviso = ?, producto_aviso = ? WHERE cod_producto = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->detalle,

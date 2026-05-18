@@ -26,7 +26,7 @@ class Hospitales {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['HospTel LIKE :search', 'HospDom LIKE :search', 'HospLoc LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['HospCod LIKE :search', 'HospDesc LIKE :search', 'HospDesc2 LIKE :search', 'HospCUIT LIKE :search', 'HospTel LIKE :search', 'HospDom LIKE :search', 'HospLoc LIKE :search']);
             }
             $sql = "SELECT * FROM hospitales $where LIMIT :limit OFFSET :offset";
             $stm = $this->pdo->prepare($sql);
@@ -45,7 +45,7 @@ class Hospitales {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['HospTel LIKE :search', 'HospDom LIKE :search', 'HospLoc LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['HospCod LIKE :search', 'HospDesc LIKE :search', 'HospDesc2 LIKE :search', 'HospCUIT LIKE :search', 'HospTel LIKE :search', 'HospDom LIKE :search', 'HospLoc LIKE :search']);
             }
             $sql = "SELECT count(*) FROM hospitales $where";
             $stm = $this->pdo->prepare($sql);
@@ -78,7 +78,7 @@ class Hospitales {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            if (!empty($data->HospCod)) {
                 $sql = "UPDATE hospitales SET HospDesc = ?, HospMail = ?, HospCUIT = ?, HospTel = ?, HospDom = ?, HospCUFE = ?, HospLoc = ?, HospDesc2 = ?, HospLocCod = ? WHERE HospCod = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->HospDesc,

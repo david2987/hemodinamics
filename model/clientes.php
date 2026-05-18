@@ -40,9 +40,13 @@ class Clientes {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['nombre LIKE :search', 'domicilio LIKE :search', 'localidad LIKE :search', 'cod_postal LIKE :search', 'telefono LIKE :search', 'celular LIKE :search', 'email LIKE :search', 'cuit LIKE :search', 'iva LIKE :search', 'CliNomCon1 LIKE :search', 'CliMaiCon1 LIKE :search', 'CliNomCon2 LIKE :search', 'CliMaiCon2 LIKE :search', 'CliNomCon3 LIKE :search', 'CliMaiCon3 LIKE :search', 'CliNomCon4 LIKE :search', 'CliMaiCon4 LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['clientes.nombre LIKE :search', 'clientes.domicilio LIKE :search', 'clientes.localidad LIKE :search', 'clientes.cod_postal LIKE :search', 'clientes.telefono LIKE :search', 'clientes.celular LIKE :search', 'clientes.email LIKE :search', 'clientes.cuit LIKE :search', 'clientes.iva LIKE :search']);
             }
-            $sql = "SELECT * FROM clientes $where LIMIT :limit OFFSET :offset";
+            $sql = "SELECT clientes.*, localidades.LcoNom AS localidad_nombre 
+                    FROM clientes 
+                    LEFT JOIN localidades ON clientes.CliLocCod = localidades.LcoCod 
+                    $where 
+                    LIMIT :limit OFFSET :offset";
             $stm = $this->pdo->prepare($sql);
             if (!empty($search)) $stm->bindValue(':search', $search, PDO::PARAM_STR);
             $stm->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -59,7 +63,7 @@ class Clientes {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['nombre LIKE :search', 'domicilio LIKE :search', 'localidad LIKE :search', 'cod_postal LIKE :search', 'telefono LIKE :search', 'celular LIKE :search', 'email LIKE :search', 'cuit LIKE :search', 'iva LIKE :search', 'CliNomCon1 LIKE :search', 'CliMaiCon1 LIKE :search', 'CliNomCon2 LIKE :search', 'CliMaiCon2 LIKE :search', 'CliNomCon3 LIKE :search', 'CliMaiCon3 LIKE :search', 'CliNomCon4 LIKE :search', 'CliMaiCon4 LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['clientes.nombre LIKE :search', 'clientes.domicilio LIKE :search', 'clientes.localidad LIKE :search', 'clientes.cod_postal LIKE :search', 'clientes.telefono LIKE :search', 'clientes.celular LIKE :search', 'clientes.email LIKE :search', 'clientes.cuit LIKE :search', 'clientes.iva LIKE :search']);
             }
             $sql = "SELECT count(*) FROM clientes $where";
             $stm = $this->pdo->prepare($sql);
@@ -73,7 +77,10 @@ class Clientes {
 
     public function Obtener($id) {
         try {
-            $stm = $this->pdo->prepare("SELECT * FROM clientes WHERE cod_cliente = ?");
+            $stm = $this->pdo->prepare("SELECT clientes.*, localidades.LcoNom AS localidad_nombre 
+                                        FROM clientes 
+                                        LEFT JOIN localidades ON clientes.CliLocCod = localidades.LcoCod 
+                                        WHERE clientes.cod_cliente = ?");
             $stm->execute(array($id));
             return $stm->fetch(PDO::FETCH_OBJ);
         } catch(Exception $e) {
@@ -92,7 +99,7 @@ class Clientes {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            if (!empty($data->cod_cliente)) {
                 $sql = "UPDATE clientes SET nombre = ?, domicilio = ?, localidad = ?, cod_postal = ?, telefono = ?, celular = ?, email = ?, cuit = ?, iva = ?, CliNomCon1 = ?, CliTelCon1 = ?, CliMaiCon1 = ?, CliNomCon2 = ?, CliTelCon2 = ?, CliMaiCon2 = ?, CliNomCon3 = ?, CliTelCon3 = ?, CliMaiCon3 = ?, CliNomCon4 = ?, CliTelCon4 = ?, CliMaiCon4 = ?, CliLocCod = ?, CcliCod = ? WHERE cod_cliente = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->nombre,

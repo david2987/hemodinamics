@@ -23,9 +23,13 @@ class Usuarios {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['UsrCod LIKE :search', 'UsrPas LIKE :search', 'UsrInf LIKE :search', 'UsrAct LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['usuarios.UsrCod LIKE :search', 'usuarios.UsrPas LIKE :search', 'usuarios.UsrInf LIKE :search', 'usuarios.UsrAct LIKE :search']);
             }
-            $sql = "SELECT * FROM usuarios $where LIMIT :limit OFFSET :offset";
+            $sql = "SELECT usuarios.*, sisgru.GruDsc AS grupo_nombre 
+                    FROM usuarios 
+                    LEFT JOIN sisgru ON usuarios.GruCod = sisgru.GruCod 
+                    $where 
+                    LIMIT :limit OFFSET :offset";
             $stm = $this->pdo->prepare($sql);
             if (!empty($search)) $stm->bindValue(':search', $search, PDO::PARAM_STR);
             $stm->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -42,7 +46,7 @@ class Usuarios {
             $where = '';
             if (!empty($search)) {
                 $search = '%' . $search . '%';
-                $where = 'WHERE ' . implode(' OR ', ['UsrCod LIKE :search', 'UsrPas LIKE :search', 'UsrInf LIKE :search', 'UsrAct LIKE :search']);
+                $where = 'WHERE ' . implode(' OR ', ['usuarios.UsrCod LIKE :search', 'usuarios.UsrPas LIKE :search', 'usuarios.UsrInf LIKE :search', 'usuarios.UsrAct LIKE :search']);
             }
             $sql = "SELECT count(*) FROM usuarios $where";
             $stm = $this->pdo->prepare($sql);
@@ -56,7 +60,10 @@ class Usuarios {
 
     public function Obtener($id) {
         try {
-            $stm = $this->pdo->prepare("SELECT * FROM usuarios WHERE UsrCod = ?");
+            $stm = $this->pdo->prepare("SELECT usuarios.*, sisgru.GruDsc AS grupo_nombre 
+                                        FROM usuarios 
+                                        LEFT JOIN sisgru ON usuarios.GruCod = sisgru.GruCod 
+                                        WHERE usuarios.UsrCod = ?");
             $stm->execute(array($id));
             return $stm->fetch(PDO::FETCH_OBJ);
         } catch(Exception $e) {
@@ -75,7 +82,14 @@ class Usuarios {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            $exists = false;
+            if (!empty($data->UsrCod)) {
+                $check = $this->pdo->prepare("SELECT count(*) FROM usuarios WHERE UsrCod = ?");
+                $check->execute(array($data->UsrCod));
+                $exists = $check->fetchColumn() > 0;
+            }
+
+            if ($exists) {
                 $sql = "UPDATE usuarios SET UsrPas = ?, UsrInf = ?, GruCod = ?, UsrAdm = ?, SucCod = ?, UsrAct = ? WHERE UsrCod = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->UsrPas,

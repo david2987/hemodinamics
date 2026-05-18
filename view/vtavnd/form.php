@@ -10,27 +10,27 @@
 <form action="?c=vtavnd&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="VndCod" value="<?php echo htmlspecialchars($alm->VndCod); ?>" />
     <div class="form-group">
-        <label>VndCod</label>
+        <label>Código</label>
         <input type="text" class="form-control" value="<?php echo htmlspecialchars($alm->VndCod); ?>" readonly />
     </div>
     <div class="form-group">
-        <label>VndNom</label>
+        <label>Nombre</label>
         <input type="text" name="VndNom" value="<?php echo htmlspecialchars($alm->VndNom); ?>" class="form-control" placeholder="Ingrese VndNom" />
     </div>
     <div class="form-group">
-        <label>VndDir</label>
+        <label>Dirección</label>
         <input type="text" name="VndDir" value="<?php echo htmlspecialchars($alm->VndDir); ?>" class="form-control" placeholder="Ingrese VndDir" />
     </div>
     <div class="form-group">
-        <label>VndTel</label>
+        <label>Teléfono</label>
         <input type="text" name="VndTel" value="<?php echo htmlspecialchars($alm->VndTel); ?>" class="form-control" placeholder="Ingrese VndTel" />
     </div>
     <div class="form-group">
-        <label>VndCel</label>
+        <label>Celular</label>
         <input type="text" name="VndCel" value="<?php echo htmlspecialchars($alm->VndCel); ?>" class="form-control" placeholder="Ingrese VndCel" />
     </div>
     <div class="form-group">
-        <label>VndCom</label>
+        <label>Correo</label>
         <input type="text" name="VndCom" value="<?php echo htmlspecialchars($alm->VndCom); ?>" class="form-control" placeholder="Ingrese VndCom" />
     </div>
     <div class="form-group">

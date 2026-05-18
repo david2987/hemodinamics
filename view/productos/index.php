@@ -11,14 +11,14 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>cod_producto</th>
-            <th>detalle</th>
-            <th>producto_titulo</th>
-            <th>producto_precio</th>
-            <th>productoPrecDis</th>
-            <th>CptId</th>
-            <th>producto_fechaaviso</th>
-            <th>producto_aviso</th>
+            <th>Código</th>
+            <th>Detalle</th>
+            <th>Título</th>
+            <th>Precio</th>
+            <th>Precio Diferenciado</th>
+            <th>Categoría</th>
+            <th>Fecha Aviso</th>
+            <th>Aviso</th>
             <th style="width:120px;"></th>
         </tr>
     </thead>
@@ -30,7 +30,7 @@
             <td><?php echo htmlspecialchars($r->producto_titulo); ?></td>
             <td><?php echo htmlspecialchars($r->producto_precio); ?></td>
             <td><?php echo htmlspecialchars($r->productoPrecDis); ?></td>
-            <td><?php echo htmlspecialchars($r->CptId); ?></td>
+            <td><?php echo htmlspecialchars(!empty($r->categoria_nombre) ? $r->categoria_nombre : $r->CptId); ?></td>
             <td><?php echo htmlspecialchars($r->producto_fechaaviso); ?></td>
             <td><?php echo htmlspecialchars($r->producto_aviso); ?></td>
             <td>

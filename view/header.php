@@ -813,8 +813,14 @@ try {
                     <li class="sidebar-menu-item <?php echo $activeController === 'categoriaclientes' ? 'active' : ''; ?>">
                         <a href="index.php?c=categoriaclientes"><i class="fa-solid fa-tags"></i><span>Cat. Clientes</span></a>
                     </li>
+                    <li class="sidebar-menu-item <?php echo $activeController === 'categoriaproductos' ? 'active' : ''; ?>">
+                        <a href="index.php?c=categoriaproductos"><i class="fa-solid fa-tags"></i><span>Cat. Productos</span></a>
+                    </li>
                     <li class="sidebar-menu-item <?php echo $activeController === 'categoriapresupuesto' ? 'active' : ''; ?>">
                         <a href="index.php?c=categoriapresupuesto"><i class="fa-solid fa-folder-tree"></i><span>Cat. Presupuesto</span></a>
+                    </li>
+                    <li class="sidebar-menu-item <?php echo $activeController === 'sisgru' ? 'active' : ''; ?>">
+                        <a href="index.php?c=sisgru"><i class="fa-solid fa-users-gear"></i><span>Grupos Usuarios</span></a>
                     </li>
                     <li class="sidebar-menu-item <?php echo $activeController === 'usuarios' ? 'active' : ''; ?>">
                         <a href="index.php?c=usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>
