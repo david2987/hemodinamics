@@ -143,14 +143,16 @@ if(!empty($alm->cod_medico)) {
                 </thead>
                 <tbody>
                     <?php if(isset($alm->detalles)): ?>
-                        <?php foreach($alm->detalles as $d): ?>
+                        <?php foreach($alm->detalles as $d): ?>                            
                         <tr>
                             <td><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
                             <td>
                                 <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
-                                <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->detalle_ag); ?>" />
+                                <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
                             </td>
-                            <td><input type="text" name="det_detalle[]" class="form-control input-sm" value="<?php echo $d->detalle_ag; ?>" /></td>
+                            <td><textarea type="text" name="det_detalle[]" class="form-control input-md" style="width: 100%; height: 134px;">
+                                <?php echo $d->detalle_ag; ?>
+                            </textarea></td>
                             <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
                             <td><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
                             <td class="row-total"><?php echo number_format($d->importe, 2); ?></td>
@@ -457,7 +459,7 @@ $(document).ready(function(){
                     var data = $(el).getSelectedItemData();
                     var row = $(el).closest('tr');
                     row.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
-                    row.find('input[name="det_detalle[]"]').val(data.name);
+                    row.find('textarea[name="det_detalle[]"]').val(data.detalle);
                     $(el).data('selected', data.name);
                 }
             }
@@ -487,7 +489,7 @@ $(document).ready(function(){
                 <input type="hidden" name="det_cod_producto[]" />
                 <input type="text" class="form-control input-sm product-suggest" />
             </td>
-            <td><input type="text" name="det_detalle[]" class="form-control input-sm" /></td>
+            <td><textarea name="det_detalle[]" class="form-control input-sm" style="width: 236px; height: 134px;" /></td>
             <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="1" /></td>
             <td><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="0" /></td>
             <td class="row-total">0.00</td>

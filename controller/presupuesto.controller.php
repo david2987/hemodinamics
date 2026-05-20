@@ -43,7 +43,7 @@ class PresupuestoController{
         $alm->plazo = $_REQUEST['plazo'];
         $alm->Licitacion_Nro = isset($_REQUEST['Licitacion_Nro']) ? 1 : 0;
         $alm->PresupuestoPaciente = $_REQUEST['PresupuestoPaciente'];
-        $alm->PresupDisAlt = $_REQUEST['PresupDisAlt'];
+        // $alm->PresupDisAlt = $_REQUEST['PresupDisAlt'];
         $alm->CprCod = $_REQUEST['CprCod'];
         $alm->PresupVndCom = $_REQUEST['PresupVndCom'];
         $alm->PresupFecSeg = $_REQUEST['PresupFecSeg'];
@@ -60,7 +60,7 @@ class PresupuestoController{
                     'cod_producto' => $val,
                     'detalle' => $_REQUEST['det_detalle'][$key],
                     'cantidad' => $_REQUEST['det_cantidad'][$key],
-                    'importe' => $_REQUEST['det_importe'][$key],
+                    'importe' => $_REQUEST['det_importe'][$key],                    
                     'alt' => isset($_REQUEST['det_alt'][$key]) ? 'S' : 'N'
                 ];
             }
@@ -76,6 +76,13 @@ class PresupuestoController{
         }
         
         header('Location: index.php?c=presupuesto');
+    }
+
+    private function ObtenerTituloProducto($cod_producto = 0 ) {     
+        require_once 'model/productos.php';
+        $pModel = new Productos();
+        $producto = $pModel->Obtener($cod_producto);
+        return $producto ? $producto->titulo : '';
     }
 
     public function PreviewPDF() {
@@ -95,10 +102,10 @@ class PresupuestoController{
 
         // Top Right: NRO & FECHA
         $nro = isset($_REQUEST['cod_presupuesto']) && $_REQUEST['cod_presupuesto'] ? $_REQUEST['cod_presupuesto'] : 'BORRADOR';
-        $pdf->SetXY(145, 15);
+        $pdf->SetXY(155, 9.5);
         $pdf->Cell(50, 5, $nro, 0, 0, 'L');
         
-        $pdf->SetXY(145, 20);
+        $pdf->SetXY(158, 13.5);
         $pdf->Cell(50, 5, $_REQUEST['fecha'], 0, 0, 'L');
 
         // Fetch Cliente Data
@@ -124,17 +131,17 @@ class PresupuestoController{
         $pdf->SetFont('Arial', '', 9);
 
         // Middle Left: Cliente
-        $pdf->SetXY(38, 58);
+        $pdf->SetXY(22, 45.5);
         $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(38, 64);
+        $pdf->SetXY(22, 50);
         $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(38, 70);
+        $pdf->SetXY(25, 55);
         $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
         
         // Middle Right: Localidad & CUIT
-        $pdf->SetXY(133, 58);
+        $pdf->SetXY(89, 50);
         $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(133, 64);
+        $pdf->SetXY(82, 55);
         $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
 
         // Fetch Medico
@@ -152,42 +159,45 @@ class PresupuestoController{
         $pdf->SetFont('Arial', '', 9);
 
         // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(28, 80);
+        $pdf->SetXY(20, 67);
         $pdf->Cell(80, 5, utf8_decode($_REQUEST['PresupuestoPaciente']), 0, 0, 'L');
-        $pdf->SetXY(28, 86);
+        $pdf->SetXY(29, 72);
         $fecha_hora_ap = $_REQUEST['PresupFecSeg'] . ' ' . $_REQUEST['PresupHorSeg'];
         $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
         
         // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(113, 80);
+        $pdf->SetXY(84, 66.5);
         $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(113, 86);
+        $pdf->SetXY(89, 72);
         $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
 
         // Grid Details
         $pdf->SetXY(10, 102);
-        $y = 102;
-        $pdf->SetFont('Arial', '', 9);
+        $y = 90;
+        $pdf->SetFont('Arial', '', 7);
         if(isset($_REQUEST['det_cod_producto'])) {
             foreach($_REQUEST['det_cod_producto'] as $key => $val) {
                 if(empty($val)) continue;
                 
+
                 $pdf->SetXY(12, $y);
-                $pdf->Cell(20, 5, $val, 0, 0, 'C'); // ITEM (Product ID)
+                $pdf->Cell(20, 5, $key == 0 ? '1' : $key + 1, 0, 0, 'C'); 
                 
-                $pdf->SetXY(43, $y);
-                $pdf->Cell(15, 5, $_REQUEST['det_cantidad'][$key], 0, 0, 'C'); // CANT
+                $pdf->SetXY(50, $y);
+                $pdf->Cell(15, 5, $_REQUEST['det_cantidad'][$key], 0, 0, 'C'); 
+                            
+                $pdf->SetXY(160, $y);
+                $pdf->Cell(20, 5, '$ ' . number_format($_REQUEST['det_importe'][$key], 2), 0, 0, 'R'); 
                 
-                $pdf->SetXY(60, $y);
-                $pdf->Cell(95, 5, utf8_decode($_REQUEST['det_detalle'][$key]), 0, 0, 'L'); // DESCRIPCION
-                
-                $pdf->SetXY(156, $y);
-                $pdf->Cell(20, 5, '$ ' . number_format($_REQUEST['det_importe'][$key], 2), 0, 0, 'R'); // UNITARIO
-                
-                $pdf->SetXY(178, $y);
+                $pdf->SetXY(183, $y);
                 $total = $_REQUEST['det_cantidad'][$key] * $_REQUEST['det_importe'][$key];
-                $pdf->Cell(20, 5, '$ ' . number_format($total, 2), 0, 0, 'R'); // TOTAL
+                $pdf->Cell(20, 5, '$ ' . number_format($total, 2), 0, 0, 'R'); 
                 
+
+                $pdf->SetXY(80, $y);
+                $pdf->MultiCell(80, 5, utf8_decode($_REQUEST['det_detalle'][$key]), 0, 'L');             
+                $y = $pdf->GetY() + 2;
+
                 $y += 6;
             }
         }
@@ -212,9 +222,21 @@ class PresupuestoController{
         
         $pdf->SetXY(45, 270);
         $pdf->Cell(60, 5, utf8_decode($_REQUEST['plazo']), 0, 0, 'L');
+        
+        // Bottom Right: Total
+        $total = 0;
+        if(isset($_REQUEST['det_cantidad']) && isset($_REQUEST['det_importe'])) {
+            foreach($_REQUEST['det_cantidad'] as $key => $cantidad) {
+                if(!empty($_REQUEST['det_importe'][$key])) {
+                    $total += (float)$_REQUEST['det_importe'][$key] * (int)$cantidad;
+                }
+            }
+        }
+        $pdf->SetXY(145, 270);
+        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total, 2), 0, 0, 'R');
 
         // Bottom Center: Observaciones
-        $pdf->SetXY(105, 260);
+        $pdf->SetXY(109, 261.5);
         $pdf->MultiCell(90, 4, utf8_decode($_REQUEST['PresupVndCom']), 0, 'L');
 
         $filename = 'scratch/temp_presupuesto_' . time() . '.pdf';
@@ -316,12 +338,12 @@ class PresupuestoController{
         $pdf->SetXY(84, 66.5);
         $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
         $pdf->SetXY(89, 72);
-        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        $pdf->Cell(85, 5, utf8_decode(''), 0, 0, 'L');
 
         // Grid Details
         $pdf->SetXY(10, 102);
         $y = 90;
-        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetFont('Arial', '',7);
         if(isset($alm->detalles)) {
             foreach($alm->detalles as $d) {
                 $pdf->SetXY(12, $y);
@@ -330,15 +352,18 @@ class PresupuestoController{
                 $pdf->SetXY(50, $y);
                 $pdf->Cell(15, 5, $d->cantidad, 0, 0, 'C'); 
                 
-                $pdf->SetXY(80, $y);
-                $pdf->Cell(95, 5, utf8_decode($d->detalle_ag), 0, 0, 'L'); 
-                
-                $pdf->SetXY(158, $y);
+                  
+                $pdf->SetXY(161, $y);
                 $pdf->Cell(20, 5, '$ ' . number_format($d->p_unitario, 2), 0, 0, 'R'); 
                 
-                $pdf->SetXY(181, $y);
+                $pdf->SetXY(182, $y);
                 $pdf->Cell(20, 5, '$ ' . number_format($d->importe, 2), 0, 0, 'R'); 
+
+                $pdf->SetXY(80, $y);
+                $pdf->MultiCell(80, 5, utf8_decode($d->detalle_ag), 0, 'L');
+                $y = $pdf->GetY() + 2;
                 
+              
                 $y += 6;
             }
         }
@@ -363,9 +388,19 @@ class PresupuestoController{
         
         $pdf->SetXY(45, 270);
         $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
+        
+        // Bottom Right: Total
+        $total = 0;
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $total += (float)$d->importe;
+            }
+        }
+        $pdf->SetXY(145, 270);
+        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total, 2), 0, 0, 'R');
 
         // Bottom Center: Observaciones
-        $pdf->SetXY(105, 260);
+        $pdf->SetXY(109, 261.5);
         $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
 
         // If download=1 parameter present, force file download; otherwise show inline

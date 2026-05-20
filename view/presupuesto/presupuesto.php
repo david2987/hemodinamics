@@ -262,9 +262,10 @@ if(empty($_GET['excel'])){ ?>
         </button>
 
         <!-- Dynamic Metrics Badge -->
-        <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
-            <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 500; font-size: 13px;">
-                Registros: <strong id="cantRegistroMostrar" style="color: #0f172a;"></strong>
+        <div style="margin-left: auto; display: flex; gap: 12px; align-items: start;">
+            <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 500; font-size: 13px; text-align: left;">
+                Importe Total: $<strong id="importeRegistroMostrar" style="color: #0f172a;margin-top: 5px;"></strong><br>
+                Cantidad: <strong id="cantRegistroMostrar" style="color: #0f172a;margin-top: 5px;"></strong>
             </span>
         </div>
     </div>
