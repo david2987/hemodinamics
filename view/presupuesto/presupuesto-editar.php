@@ -1,3 +1,42 @@
+<?php
+$cliente_nombre_val = '';
+if(!empty($alm->cod_cliente)) {
+    require_once 'model/clientes.php';
+    $clienteModel = new Clientes();
+    $cliente = $clienteModel->Obtener($alm->cod_cliente);
+    if($cliente) {
+        $cliente_nombre_val = $cliente->nombre;
+    }
+}
+
+$medico_nombre_val = '';
+if(!empty($alm->cod_medico)) {
+    require_once 'model/medicos.php';
+    $medicoModel = new Medicos();
+    $medico = $medicoModel->Obtener($alm->cod_medico);
+    if($medico) {
+        $medico_nombre_val = $medico->mediconombre;
+    }
+}
+?>
+<style>
+.easy-autocomplete-container {
+    z-index: 99999 !important;
+    position: absolute !important;
+}
+.easy-autocomplete {
+    width: 100% !important;
+}
+.panel.panel-info,
+.panel.panel-info .panel-body,
+#detalles-table {
+    overflow: visible !important;
+}
+#detalles-table td {
+    overflow: visible !important;
+    position: relative;
+}
+</style>
 <form id="frm-presupuesto" action="?c=presupuesto&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="cod_presupuesto" value="<?php echo $alm->cod_presupuesto; ?>" />
     <div class="row">
@@ -38,33 +77,25 @@
 
             <div class="row" style="margin-bottom: 10px;">
                 <div class="col-md-12">
-                    <div class="form-inline">
-                        <label style="width: 150px;">Cliente (*)</label>
-                        <input type="hidden" id="cod_cliente" name="cod_cliente" value="<?php echo $alm->cod_cliente; ?>" />
-                        <input type="text" id="cliente_nombre" class="form-control" style="width: 300px;" placeholder="1 - Sin Datos" required value="<?php echo isset($alm->nombre) ? $alm->nombre : ''; ?>" />
-                    </div>
-                </div>
-            </div>
-
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Cliente (*)</label>
                         <input type="hidden" id="cod_cliente" name="cod_cliente" value="<?php echo $alm->cod_cliente; ?>" />
-                        <input type="text" id="cliente_nombre" class="form-control" placeholder="Buscar cliente..." required />
+                        <input type="text" id="cliente_nombre" class="form-control" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($cliente_nombre_val); ?>" required />
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Paciente (*)</label>
-                        <input type="text" name="PresupuestoPaciente" class="form-control" value="<?php echo $alm->PresupuestoPaciente; ?>" placeholder="Nombre del paciente" required />
+                        <input type="text" name="PresupuestoPaciente" class="form-control" value="<?php echo htmlspecialchars($alm->PresupuestoPaciente); ?>" placeholder="Nombre del paciente" required />
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Médico (*)</label>
                         <input type="hidden" id="cod_medico" name="cod_medico" value="<?php echo $alm->cod_medico; ?>" />
-                        <input type="text" id="medico_nombre" class="form-control" placeholder="Buscar médico..." required />
+                        <input type="text" id="medico_nombre" class="form-control" placeholder="Buscar médico..." value="<?php echo htmlspecialchars($medico_nombre_val); ?>" required />
                     </div>
                 </div>
             </div>
@@ -117,7 +148,7 @@
                             <td><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
                             <td>
                                 <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
-                                <input type="text" class="form-control input-sm product-suggest" value="<?php echo $d->cod_producto; ?>" />
+                                <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->detalle_ag); ?>" />
                             </td>
                             <td><input type="text" name="det_detalle[]" class="form-control input-sm" value="<?php echo $d->detalle_ag; ?>" /></td>
                             <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
@@ -149,7 +180,14 @@
                         <select name="f_pago" class="form-control">
                             <option value="">Seleccione...</option>
                             <?php foreach($this->model->buscapagos() as $p): ?>
-                                <option value="<?php echo $p->FfaCod; ?>" <?php echo $alm->f_pago == $p->FfaCod ? 'selected' : ''; ?>><?php echo $p->FfaDesc; ?></option>
+                                <option value="<?php echo $p->FfaCod;   ?> " 
+                                <?php 
+                                if($p->FfaCod == 15 && $alm->f_pago == 0) {
+                                    echo 'selected';
+                                }
+                                ?>
+                                
+                                <?php echo $alm->f_pago == $p->FfaCod ? 'selected' : ''; ?>><?php echo $p->FfaDesc; ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -247,8 +285,73 @@
 
 <script>
 $(document).ready(function(){
+    var selectedClienteName = $("#cliente_nombre").val();
+    var selectedMedicoName = $("#medico_nombre").val();
+
+    function validarFormulario() {
+        // Validate Cliente
+        var codCliente = $("#cod_cliente").val();
+        var clienteNombre = $.trim($("#cliente_nombre").val());
+        if (!codCliente || !clienteNombre) {
+            alert("Debe seleccionar un Cliente válido de la lista de sugerencias.");
+            $("#cliente_nombre").focus();
+            return false;
+        }
+
+        // Validate Paciente
+        var paciente = $.trim($("input[name='PresupuestoPaciente']").val());
+        if (!paciente) {
+            alert("Debe ingresar el nombre del Paciente.");
+            $("input[name='PresupuestoPaciente']").focus();
+            return false;
+        }
+
+        // Validate Medico
+        var codMedico = $("#cod_medico").val();
+        var medicoNombre = $.trim($("#medico_nombre").val());
+        if (!codMedico || !medicoNombre) {
+            alert("Debe seleccionar un Médico válido de la lista de sugerencias.");
+            $("#medico_nombre").focus();
+            return false;
+        }
+
+        // Validate at least 1 detail line
+        var detRows = $("#detalles-table tbody tr");
+        if (detRows.length === 0) {
+            alert("Debe cargar al menos 1 detalle en el presupuesto.");
+            return false;
+        }
+
+        var validDetailExists = false;
+        detRows.each(function() {
+            var codProd = $(this).find('input[name="det_cod_producto[]"]').val();
+            var qty = parseFloat($(this).find('.qty').val()) || 0;
+            if (codProd && qty > 0) {
+                validDetailExists = true;
+            }
+        });
+
+        if (!validDetailExists) {
+            alert("Debe cargar al menos 1 detalle con un Producto válido de la lista y cantidad mayor a 0.");
+            return false;
+        }
+
+        return true;
+    }
+
+    $("#frm-presupuesto").submit(function(e) {
+        if (!validarFormulario()) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
     // Form Preview Logic
     $("#btn-previsualizar").click(function(){
+        if (!validarFormulario()) {
+            return;
+        }
+
         var formData = $("#frm-presupuesto").serialize();
         // Change button to loading state
         var btn = $(this);
@@ -278,19 +381,51 @@ $(document).ready(function(){
     });
 
     $("#btn-guardar-definitivo").click(function(){
-        $("#frm-presupuesto").submit();
+        if (!validarFormulario()) {
+            return;
+        }
+        var btn = $(this);
+        btn.prop('disabled', true).text('Guardando...');
+
+        $.ajax({
+            url: '?c=presupuesto&a=Guardar',
+            type: 'POST',
+            data: $("#frm-presupuesto").serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Open PDF download in a new tab
+                    window.open('?c=presupuesto&a=VerPDF&id=' + response.id + '&download=1', '_blank');
+                    // Redirect main window to budget list
+                    window.location.href = 'index.php?c=presupuesto';
+                } else {
+                    alert('Error al guardar el presupuesto.');
+                    btn.prop('disabled', false).text('Guardar Definitivamente');
+                }
+            },
+            error: function() {
+                alert('Error de comunicaci\u00f3n con el servidor.');
+                btn.prop('disabled', false).text('Guardar Definitivamente');
+            }
+        });
     });
 
     // Autocomplete for Cliente
     $("#cliente_nombre").easyAutocomplete({
-
         url: function(phrase) { return "view/buscacliente.php?phrase=" + phrase; },
         getValue: "name",
         list: {
             onSelectItemEvent: function() {
-                var value = $("#cliente_nombre").getSelectedItemData().cod_producto; // Wait, buscacliente.php returns cod_producto as the ID
-                $("#cod_cliente").val(value).trigger("change");
+                var data = $("#cliente_nombre").getSelectedItemData();
+                $("#cod_cliente").val(data.cod_producto).trigger("change");
+                selectedClienteName = data.name;
             }
+        }
+    });
+
+    $("#cliente_nombre").on('input', function() {
+        if ($(this).val() !== selectedClienteName) {
+            $("#cod_cliente").val('');
         }
     });
 
@@ -300,9 +435,16 @@ $(document).ready(function(){
         getValue: "name",
         list: {
             onSelectItemEvent: function() {
-                var value = $("#medico_nombre").getSelectedItemData().cod_producto;
-                $("#cod_medico").val(value).trigger("change");
+                var data = $("#medico_nombre").getSelectedItemData();
+                $("#cod_medico").val(data.cod_producto).trigger("change");
+                selectedMedicoName = data.name;
             }
+        }
+    });
+
+    $("#medico_nombre").on('input', function() {
+        if ($(this).val() !== selectedMedicoName) {
+            $("#cod_medico").val('');
         }
     });
 
@@ -316,12 +458,27 @@ $(document).ready(function(){
                     var row = $(el).closest('tr');
                     row.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
                     row.find('input[name="det_detalle[]"]').val(data.name);
+                    $(el).data('selected', data.name);
                 }
             }
         });
     }
 
-    $(".product-suggest").each(function(){ initProductSuggest(this); });
+    $(".product-suggest").each(function(){
+        var row = $(this).closest('tr');
+        var currentVal = row.find('input[name="det_cod_producto[]"]').val();
+        if (currentVal) {
+            $(this).data('selected', $(this).val());
+        }
+        initProductSuggest(this);
+    });
+
+    $(document).on('input', '.product-suggest', function() {
+        var row = $(this).closest('tr');
+        if ($(this).val() !== $(this).data('selected')) {
+            row.find('input[name="det_cod_producto[]"]').val('');
+        }
+    });
 
     $("#btn-add-row").click(function(){
         var row = `<tr>

@@ -68,6 +68,13 @@ class PresupuestoController{
 
         $this->model->Guardar($alm, $detalles);
         
+        // If AJAX request, return JSON with the saved ID
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'id' => (int)$alm->cod_presupuesto]);
+            exit;
+        }
+        
         header('Location: index.php?c=presupuesto');
     }
 
@@ -106,25 +113,28 @@ class PresupuestoController{
             $cliente = $clienteModel->Obtener($_REQUEST['cod_cliente']);
             if($cliente) {
                 $cliente_nombre = $cliente->nombre;
-                $domicilio = isset($cliente->direccion) ? $cliente->direccion : '';
+                $domicilio = isset($cliente->domicilio) ? $cliente->domicilio : '';
                 $localidad = isset($cliente->localidad) ? $cliente->localidad : '';
                 $cuit = isset($cliente->cuit) ? $cliente->cuit : '';
                 $condicion_iva = isset($cliente->condicion_iva) ? $cliente->condicion_iva : 'RESPONSABLE INSCRIPTO';
             }
         }
 
+        // Switch to regular font for client data values
+        $pdf->SetFont('Arial', '', 9);
+
         // Middle Left: Cliente
-        $pdf->SetXY(45, 59);
+        $pdf->SetXY(38, 58);
         $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(45, 64);
+        $pdf->SetXY(38, 64);
         $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(45, 69);
+        $pdf->SetXY(38, 70);
         $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
         
         // Middle Right: Localidad & CUIT
-        $pdf->SetXY(145, 59);
+        $pdf->SetXY(133, 58);
         $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(145, 64);
+        $pdf->SetXY(133, 64);
         $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
 
         // Fetch Medico
@@ -138,18 +148,21 @@ class PresupuestoController{
             }
         }
 
+        // Patient / Doctor section - regular font
+        $pdf->SetFont('Arial', '', 9);
+
         // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(45, 80);
+        $pdf->SetXY(28, 80);
         $pdf->Cell(80, 5, utf8_decode($_REQUEST['PresupuestoPaciente']), 0, 0, 'L');
-        $pdf->SetXY(45, 85);
+        $pdf->SetXY(28, 86);
         $fecha_hora_ap = $_REQUEST['PresupFecSeg'] . ' ' . $_REQUEST['PresupHorSeg'];
         $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
         
         // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(145, 80);
-        $pdf->Cell(60, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(145, 85);
-        $pdf->Cell(60, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L'); // Placeholder until we link hospital properly
+        $pdf->SetXY(113, 80);
+        $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
+        $pdf->SetXY(113, 86);
+        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
 
         // Grid Details
         $pdf->SetXY(10, 102);
@@ -236,10 +249,10 @@ class PresupuestoController{
         $pdf->SetTextColor(0, 0, 0);
 
         // Top Right: NRO & FECHA
-        $pdf->SetXY(145, 15);
+        $pdf->SetXY(155, 9.5);
         $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
         
-        $pdf->SetXY(145, 20);
+        $pdf->SetXY(158, 13.5);
         $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
 
         // Fetch Cliente Data
@@ -254,25 +267,28 @@ class PresupuestoController{
             $cliente = $clienteModel->Obtener($alm->cod_cliente);
             if($cliente) {
                 $cliente_nombre = $cliente->nombre;
-                $domicilio = isset($cliente->direccion) ? $cliente->direccion : '';
+                $domicilio = isset($cliente->domicilio) ? $cliente->domicilio : '';
                 $localidad = isset($cliente->localidad) ? $cliente->localidad : '';
                 $cuit = isset($cliente->cuit) ? $cliente->cuit : '';
                 $condicion_iva = isset($cliente->condicion_iva) ? $cliente->condicion_iva : 'RESPONSABLE INSCRIPTO';
             }
         }
 
+        // Switch to regular font for client data values
+        $pdf->SetFont('Arial', '', 9);
+
         // Middle Left: Cliente
-        $pdf->SetXY(45, 59);
+        $pdf->SetXY(22, 45.5);
         $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(45, 64);
+        $pdf->SetXY(22, 50);
         $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(45, 69);
+        $pdf->SetXY(25, 55);
         $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
         
         // Middle Right: Localidad & CUIT
-        $pdf->SetXY(145, 59);
+        $pdf->SetXY(89, 50);
         $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(145, 64);
+        $pdf->SetXY(82, 55);
         $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
 
         // Fetch Medico
@@ -286,38 +302,41 @@ class PresupuestoController{
             }
         }
 
+        // Patient / Doctor section - regular font
+        $pdf->SetFont('Arial', '', 9);
+
         // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(45, 80);
+        $pdf->SetXY(20, 67);
         $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
-        $pdf->SetXY(45, 85);
+        $pdf->SetXY(29, 72);
         $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
         $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
         
         // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(145, 80);
-        $pdf->Cell(60, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(145, 85);
-        $pdf->Cell(60, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        $pdf->SetXY(84, 66.5);
+        $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
+        $pdf->SetXY(89, 72);
+        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
 
         // Grid Details
         $pdf->SetXY(10, 102);
-        $y = 102;
+        $y = 90;
         $pdf->SetFont('Arial', '', 9);
         if(isset($alm->detalles)) {
             foreach($alm->detalles as $d) {
                 $pdf->SetXY(12, $y);
-                $pdf->Cell(20, 5, $d->cod_producto, 0, 0, 'C'); 
+                $pdf->Cell(20, 5, $d->item, 0, 0, 'C'); 
                 
-                $pdf->SetXY(43, $y);
+                $pdf->SetXY(50, $y);
                 $pdf->Cell(15, 5, $d->cantidad, 0, 0, 'C'); 
                 
-                $pdf->SetXY(60, $y);
+                $pdf->SetXY(80, $y);
                 $pdf->Cell(95, 5, utf8_decode($d->detalle_ag), 0, 0, 'L'); 
                 
-                $pdf->SetXY(156, $y);
+                $pdf->SetXY(158, $y);
                 $pdf->Cell(20, 5, '$ ' . number_format($d->p_unitario, 2), 0, 0, 'R'); 
                 
-                $pdf->SetXY(178, $y);
+                $pdf->SetXY(181, $y);
                 $pdf->Cell(20, 5, '$ ' . number_format($d->importe, 2), 0, 0, 'R'); 
                 
                 $y += 6;
@@ -349,7 +368,94 @@ class PresupuestoController{
         $pdf->SetXY(105, 260);
         $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
 
-        $pdf->Output('I', 'Presupuesto_' . $alm->cod_presupuesto . '.pdf');
+        // If download=1 parameter present, force file download; otherwise show inline
+        $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
+        $pdf->Output($disposition, 'Presupuesto_' . $alm->cod_presupuesto . '.pdf');
+    }
+
+    public function ObtenerDetallesJson() {
+        header('Content-Type: application/json');
+        try {
+            $id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
+            $data = $this->model->ObtenerCompletoParaAutorizar($id);
+            $coordinadores = $this->model->ListarCoordinadores();
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $data,
+                'coordinadores' => $coordinadores
+            ]);
+        } catch(Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    public function Autorizar() {
+        header('Content-Type: application/json');
+        try {
+            $id = (int)$_REQUEST['cod_presupuesto'];
+            $paciente = $_REQUEST['PresupuestoPaciente'];
+            $cod_medico = (int)$_REQUEST['cod_medico'];
+            $vndCod = (int)$_REQUEST['VndCod'];
+            $comentario = $_REQUEST['PresupVndCom'];
+            $items_a_eliminar = isset($_REQUEST['items_a_eliminar']) ? $_REQUEST['items_a_eliminar'] : [];
+
+            $this->model->AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $items_a_eliminar);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Presupuesto autorizado correctamente.'
+            ]);
+        } catch(Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    public function ObtenerMotivosAnulacionJson() {
+        header('Content-Type: application/json');
+        try {
+            $motivos = $this->model->ListarMotivosAnulacion();
+            echo json_encode([
+                'success' => true,
+                'motivos' => $motivos
+            ]);
+        } catch(Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    public function Anular() {
+        header('Content-Type: application/json');
+        try {
+            $id = (int)$_REQUEST['cod_presupuesto'];
+            $sueCod = (int)$_REQUEST['SueCod'];
+            $comentario = $_REQUEST['PresupVndCom'];
+
+            $this->model->AnularPresupuesto($id, $sueCod, $comentario);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Presupuesto anulado correctamente.'
+            ]);
+        } catch(Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
 }
 ?>

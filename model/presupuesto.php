@@ -57,7 +57,7 @@ class presupuesto
 		{
 			$result = array();
 
-			$sql = "SELECT presupuestos.cod_presupuesto,fecha ,PresupEnviadoMail,PresupFecAut,nombre,PresupuestoPaciente,mediconombre,CprDes,PresupVndCom,presupuestos.EspCod,EspDes,SueDes,PresupFecVnd,VndNom,PresupUsrCre,Licitacion_Nro,PresupRecPre,PresupDisAlt,PresupPrc,PresupUsuSeg FROM presupuestos";  
+			$sql = "SELECT presupuestos.cod_presupuesto,fecha ,PresupEnviadoMail,PresupFecAut,nombre,PresupuestoPaciente,mediconombre,CprDes,PresupVndCom,presupuestos.EspCod,EspDes,SueDes,PresupFecVnd,VndNom,PresupUsrCre,Licitacion_Nro,PresupRecPre,PresupDisAlt,PresupPrc,PresupUsuSeg,PresupMedOk FROM presupuestos";  
 			$sql .=" LEFT JOIN  clientes ON presupuestos.cod_cliente = clientes.cod_cliente ";  
 			//$sql .=" RIGHT JOIN  detalles_presupuesto ON presupuestos.cod_presupuesto =  detalles_presupuesto.cod_presupuesto  ";  
 			$sql .=" LEFT JOIN  medicos ON presupuestos.cod_medico = medicos.cod_medico  ";
@@ -401,7 +401,25 @@ class presupuesto
     {
         try 
         {
+            // Build PresupProductos (concatenated detail product codes e.g. ;581;572;)
+            $prod_codes = ';';
+            if (is_array($detalles)) {
+                foreach($detalles as $d) {
+                    if (!empty($d['cod_producto'])) {
+                        $prod_codes .= $d['cod_producto'] . ';';
+                    }
+                }
+            }
+
+            $exists = false;
             if(!empty($data->cod_presupuesto))
+            {
+                $stm = $this->pdo->prepare("SELECT COUNT(*) FROM presupuestos WHERE cod_presupuesto = ?");
+                $stm->execute(array($data->cod_presupuesto));
+                $exists = ($stm->fetchColumn() > 0);
+            }
+
+            if($exists)
             {
                 $sql = "UPDATE presupuestos SET 
                             cod_cliente = ?, 
@@ -418,7 +436,8 @@ class presupuesto
                             PresupHorSeg = ?, 
                             PresupRel = ?, 
                             Expendiente_nro = ?,
-                            PresupEnviadoMail = ?
+                            PresupEnviadoMail = ?,
+                            PresupProductos = ?
                         WHERE cod_presupuesto = ?";
 
                 $this->pdo->prepare($sql)
@@ -439,6 +458,7 @@ class presupuesto
                             $data->PresupRel, 
                             $data->Expendiente_nro,
                             $data->PresupEnviadoMail,
+                            $prod_codes,
                             $data->cod_presupuesto
                         )
                     );
@@ -446,12 +466,15 @@ class presupuesto
             }
             else
             {
-                $sql = "INSERT INTO presupuestos (cod_cliente, cod_medico, fecha, fecha_validez, f_pago, plazo, Licitacion_Nro, PresupuestoPaciente, PresupDisAlt, CprCod, PresupVndCom, PresupFecSeg, PresupHorSeg, PresupRel, Expendiente_nro, PresupEnviadoMail) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $usrCre = isset($_SESSION['user']['UsrCod']) ? $_SESSION['user']['UsrCod'] : '';
+                
+                $sql = "INSERT INTO presupuestos (cod_presupuesto, cod_cliente, cod_medico, fecha, fecha_validez, f_pago, plazo, Licitacion_Nro, PresupuestoPaciente, PresupDisAlt, CprCod, PresupVndCom, PresupFecSeg, PresupHorSeg, PresupRel, Expendiente_nro, PresupEnviadoMail, EspCod, SueCod, PresupUsrCre, PresupProductos) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)";
 
                 $this->pdo->prepare($sql)
                      ->execute(
                         array(
+                            $data->cod_presupuesto,
                             $data->cod_cliente, 
                             $data->cod_medico, 
                             date('Y-m-d'),
@@ -467,10 +490,12 @@ class presupuesto
                             $data->PresupHorSeg, 
                             $data->PresupRel, 
                             $data->Expendiente_nro,
-                            $data->PresupEnviadoMail
+                            $data->PresupEnviadoMail,
+                            $usrCre,
+                            $prod_codes
                         )
-                    );
-                $cod_presupuesto = $this->pdo->lastInsertId();
+                     );
+                $cod_presupuesto = $data->cod_presupuesto;
             }
 
             // Handle Details
@@ -496,6 +521,139 @@ class presupuesto
             }
 
         } catch (Exception $e) 
+        {
+            die($e->getMessage());
+        }
+    }
+
+    public function ObtenerCompletoParaAutorizar($id)
+    {
+        try 
+        {
+            $sql = "SELECT p.cod_presupuesto, p.PresupuestoPaciente, p.cod_medico, m.mediconombre AS medico_nombre, c.nombre AS cliente_nombre 
+                    FROM presupuestos p 
+                    LEFT JOIN clientes c ON p.cod_cliente = c.cod_cliente 
+                    LEFT JOIN medicos m ON p.cod_medico = m.cod_medico 
+                    WHERE p.cod_presupuesto = ?";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute(array($id));
+            $r = $stm->fetch(PDO::FETCH_OBJ);
+
+            if($r) {
+                $sql_det = "SELECT d.item, d.det_producto, prd.producto_titulo AS producto_nombre, d.cantidad, d.p_unitario, d.importe 
+                            FROM detalles_presupuesto d 
+                            LEFT JOIN productos prd ON d.det_producto = prd.cod_producto 
+                            WHERE d.cod_presupuesto = ? 
+                            ORDER BY d.item";
+                $stm_det = $this->pdo->prepare($sql_det);
+                $stm_det->execute(array($id));
+                $r->detalles = $stm_det->fetchAll(PDO::FETCH_OBJ);
+
+                $sql_tot = "SELECT SUM(importe) as total FROM detalles_presupuesto WHERE cod_presupuesto = ?";
+                $stm_tot = $this->pdo->prepare($sql_tot);
+                $stm_tot->execute(array($id));
+                $r->total = $stm_tot->fetchColumn();
+            }
+
+            return $r;
+        } catch (Exception $e) 
+        {
+            die($e->getMessage());
+        }
+    }
+
+    public function ListarCoordinadores()
+    {
+        try
+        {
+            $sql = "SELECT VndCod, VndNom FROM vtavnd ORDER BY VndNom ASC";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute();
+            return $stm->fetchAll(PDO::FETCH_OBJ);
+        }
+        catch(Exception $e)
+        {
+            die($e->getMessage());
+        }
+    }
+
+    public function AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $items_a_eliminar)
+    {
+        try
+        {
+            $this->pdo->beginTransaction();
+
+            $sql = "UPDATE presupuestos SET 
+                        EspCod = 3, 
+                        SueCod = 7, 
+                        VndCod = ?, 
+                        PresupMedOk = 'S', 
+                        PresupFecSegVnd = CURRENT_DATE(), 
+                        PresupVndCom = ?, 
+                        PresupFecAut = CURRENT_DATE(),
+                        PresupuestoPaciente = ?,
+                        cod_medico = ?
+                    WHERE cod_presupuesto = ?";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute(array(
+                $vndCod,
+                $comentario,
+                $paciente,
+                $cod_medico,
+                $id
+            ));
+
+            if (!empty($items_a_eliminar) && is_array($items_a_eliminar)) {
+                $sql_del = "DELETE FROM detalles_presupuesto WHERE cod_presupuesto = ? AND item = ?";
+                $stm_del = $this->pdo->prepare($sql_del);
+                foreach ($items_a_eliminar as $itm) {
+                    $stm_del->execute(array($id, $itm));
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        }
+        catch(Exception $e)
+        {
+            $this->pdo->rollBack();
+            die($e->getMessage());
+        }
+    }
+
+    public function ListarMotivosAnulacion()
+    {
+        try
+        {
+            $sql = "SELECT SueCod, SueDes FROM sisespsub WHERE EspCod = 4 ORDER BY SueDes ASC";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute();
+            return $stm->fetchAll(PDO::FETCH_OBJ);
+        }
+        catch(Exception $e)
+        {
+            die($e->getMessage());
+        }
+    }
+
+    public function AnularPresupuesto($id, $sueCod, $comentario)
+    {
+        try
+        {
+            $sql = "UPDATE presupuestos SET 
+                        EspCod = 4, 
+                        SueCod = ?, 
+                        PresupVndCom = ?
+                    WHERE cod_presupuesto = ?";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute(array(
+                $sueCod,
+                $comentario,
+                $id
+            ));
+            return true;
+        }
+        catch(Exception $e)
         {
             die($e->getMessage());
         }
