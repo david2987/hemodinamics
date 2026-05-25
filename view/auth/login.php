@@ -102,7 +102,7 @@
         }
 
         .logo-section img {
-            max-width: 180px;
+            max-width: 318px;
             height: auto;
             background: white;
             padding: 12px 24px;
@@ -282,7 +282,7 @@
         <div class="login-card">
             
             <div class="logo-section">
-                <img src="assets/image/logo.png" alt="Hemodinamics SRL Logo">
+                <img src="assets/image/Logo.jpg" alt="Hemodinamics SRL Logo">
             </div>
             
             <div class="login-header">

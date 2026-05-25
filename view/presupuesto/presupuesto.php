@@ -341,6 +341,16 @@ $where= buscar();
             
                 <!-- VISUALIZAR PRESUPUESTO PDF -->
                 <td style="width: 10px;padding:4px"><a title='Visualizar Presupuesto PDF' href="?c=presupuesto&a=VerPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/print.png'></a></td>
+                
+                <!-- VISUALIZAR REMITO PDF (solo para autorizados) -->
+                <?php if($r->EspCod == 3) { ?>
+                <td style="width: 10px;padding:4px"><a title='Visualizar Remito PDF' href="?c=presupuesto&a=RemitoPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/print_remito.png'></a></td>
+                <?php } else { ?>
+                <td style="width: 10px;padding:4px;"><img src='assets/image/print_remito.png' title="Solo para presupuestos autorizados" style="opacity: 0.5;"></td>
+                <?php } ?>
+                
+                <!-- VISUALIZAR CARÁTULA PDF -->
+                <td style="width: 10px;padding:4px"><a title='Visualizar Carátula PDF' href="?c=presupuesto&a=CaratulaPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/print.png' style="filter: sepia(0.5) hue-rotate(30deg);"></a></td>
 
                 <!-- EDITAR (solo vencidos, perdidos o pendientes) -->
              <?php if($r->EspCod == 1 || $r->EspCod == 2 || $r->EspCod == 5){ ?> 
