@@ -89,24 +89,12 @@ class PresupuestoController{
         require_once 'fpdf/fpdf.php';
         
         $pdf = new FPDF('P', 'mm', 'A4');
-        $pdf->AddPage();
+        $pdf->SetAutoPageBreak(false, 0);
         
-        // Background
+        // === Preparar datos ===
         $background_path = 'assets/sheet/Presupuesto_page-0001.jpg';
-        if(file_exists($background_path)) {
-            $pdf->Image($background_path, 0, 0, 210, 297);
-        }
 
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->SetTextColor(0, 0, 0);
-
-        // Top Right: NRO & FECHA
         $nro = isset($_REQUEST['cod_presupuesto']) && $_REQUEST['cod_presupuesto'] ? $_REQUEST['cod_presupuesto'] : 'BORRADOR';
-        $pdf->SetXY(155, 9.5);
-        $pdf->Cell(50, 5, $nro, 0, 0, 'L');
-        
-        $pdf->SetXY(158, 13.5);
-        $pdf->Cell(50, 5, $_REQUEST['fecha'], 0, 0, 'L');
 
         // Fetch Cliente Data
         $cliente_nombre = 'Sin Datos';
@@ -127,23 +115,6 @@ class PresupuestoController{
             }
         }
 
-        // Switch to regular font for client data values
-        $pdf->SetFont('Arial', '', 9);
-
-        // Middle Left: Cliente
-        $pdf->SetXY(22, 45.5);
-        $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(22, 50);
-        $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(25, 55);
-        $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
-        
-        // Middle Right: Localidad & CUIT
-        $pdf->SetXY(89, 50);
-        $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(82, 55);
-        $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
-
         // Fetch Medico
         $medico_nombre = 'Sin Datos';
         if(!empty($_REQUEST['cod_medico'])) {
@@ -155,23 +126,105 @@ class PresupuestoController{
             }
         }
 
-        // Patient / Doctor section - regular font
-        $pdf->SetFont('Arial', '', 9);
+        // Pre-computar datos del footer
+        $fpago_name = '';
+        require_once 'model/presupuesto.php';
+        $pModel = new Presupuesto();
+        foreach($pModel->buscapagos() as $p) {
+            if($p->FfaCod == $_REQUEST['f_pago']) {
+                $fpago_name = $p->FfaDesc;
+                break;
+            }
+        }
 
-        // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(20, 67);
-        $pdf->Cell(80, 5, utf8_decode($_REQUEST['PresupuestoPaciente']), 0, 0, 'L');
-        $pdf->SetXY(29, 72);
-        $fecha_hora_ap = $_REQUEST['PresupFecSeg'] . ' ' . $_REQUEST['PresupHorSeg'];
-        $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
-        
-        // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(84, 66.5);
-        $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(89, 72);
-        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        $total_general = 0;
+        if(isset($_REQUEST['det_cantidad']) && isset($_REQUEST['det_importe'])) {
+            foreach($_REQUEST['det_cantidad'] as $key => $cantidad) {
+                if(!empty($_REQUEST['det_importe'][$key])) {
+                    $total_general += (float)$_REQUEST['det_importe'][$key] * (int)$cantidad;
+                }
+            }
+        }
 
-        // Grid Details
+        // === Closure: Renderizar encabezado (background + header) ===
+        $renderHeader = function() use ($pdf, $background_path, $nro, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+            // Background
+            if(file_exists($background_path)) {
+                $pdf->Image($background_path, 0, 0, 210, 297);
+            }
+
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->SetTextColor(0, 0, 0);
+
+            // Top Right: NRO & FECHA
+            $pdf->SetXY(155, 9.5);
+            $pdf->Cell(50, 5, $nro, 0, 0, 'L');
+            
+            $pdf->SetXY(158, 13.5);
+            $pdf->Cell(50, 5, $_REQUEST['fecha'], 0, 0, 'L');
+
+            // Switch to regular font for client data values
+            $pdf->SetFont('Arial', '', 9);
+
+            // Middle Left: Cliente
+            $pdf->SetXY(22, 45.5);
+            $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
+            $pdf->SetXY(22, 50);
+            $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
+            $pdf->SetXY(25, 55);
+            $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
+            
+            // Middle Right: Localidad & CUIT
+            $pdf->SetXY(89, 50);
+            $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
+            $pdf->SetXY(82, 55);
+            $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
+
+            // Patient / Doctor section - regular font
+            $pdf->SetFont('Arial', '', 9);
+
+            // Lower Middle Left: Paciente & Fecha/Hora Ap.
+            $pdf->SetXY(20, 67);
+            $pdf->Cell(80, 5, utf8_decode($_REQUEST['PresupuestoPaciente']), 0, 0, 'L');
+            $pdf->SetXY(29, 72);
+            $fecha_hora_ap = $_REQUEST['PresupFecSeg'] . ' ' . $_REQUEST['PresupHorSeg'];
+            $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+            
+            // Lower Middle Right: Doctor & Institucion
+            $pdf->SetXY(84, 66.5);
+            $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
+            $pdf->SetXY(89, 72);
+            $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        };
+
+        // === Closure: Renderizar footer ===
+        $renderFooter = function() use ($pdf, $fpago_name, $total_general) {
+            $pdf->SetFont('Arial', '', 9);
+
+            // Bottom Left: Validez, Forma Pago, Plazo
+            $pdf->SetXY(45, 260);
+            $pdf->Cell(60, 5, $_REQUEST['fecha_validez'], 0, 0, 'L');
+            
+            $pdf->SetXY(45, 265);
+            $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
+            
+            $pdf->SetXY(45, 270);
+            $pdf->Cell(60, 5, utf8_decode($_REQUEST['plazo']), 0, 0, 'L');
+            
+            // Bottom Right: Total
+            $pdf->SetXY(145, 270);
+            $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total_general, 2), 0, 0, 'R');
+
+            // Bottom Center: Observaciones
+            $pdf->SetXY(109, 261.5);
+            $pdf->MultiCell(90, 4, utf8_decode($_REQUEST['PresupVndCom']), 0, 'L');
+        };
+
+        // === Primera pagina ===
+        $pdf->AddPage();
+        $renderHeader();
+
+        // === Grid Details ===
         $pdf->SetXY(10, 102);
         $y = 90;
         $pdf->SetFont('Arial', '', 7);
@@ -179,6 +232,22 @@ class PresupuestoController{
             foreach($_REQUEST['det_cod_producto'] as $key => $val) {
                 if(empty($val)) continue;
                 
+                // Estimar altura del item
+                $text_check = utf8_decode($_REQUEST['det_detalle'][$key]);
+                $pdf->SetFont('Arial', '', 7);
+                $textWidth_check = $pdf->GetStringWidth($text_check);
+                $numLines_check = max(1, ceil($textWidth_check / 80));
+                $itemHeight_check = ($numLines_check * 5) + 2 + 6;
+
+                // Verificar si necesitamos nueva pagina
+                if ($y + $itemHeight_check > 249) {
+                    $renderFooter();
+                    $pdf->AddPage();
+                    $renderHeader();
+                    $y = 90;
+                    $pdf->SetFont('Arial', '', 7);
+                }
+
                 $pdf->SetXY(2, $y);
                 $pdf->Cell(20, 5, $key == 0 ? '1' : $key + 1, 0, 0, 'C'); 
                 
@@ -202,42 +271,8 @@ class PresupuestoController{
             }
         }
 
-        // Bottom Left: Validez, Forma Pago, Plazo
-        $pdf->SetXY(45, 260);
-        $pdf->Cell(60, 5, $_REQUEST['fecha_validez'], 0, 0, 'L');
-        
-        // Forma de pago name
-        $fpago_name = '';
-        require_once 'model/presupuesto.php';
-        $pModel = new Presupuesto();
-        foreach($pModel->buscapagos() as $p) {
-            if($p->FfaCod == $_REQUEST['f_pago']) {
-                $fpago_name = $p->FfaDesc;
-                break;
-            }
-        }
-        
-        $pdf->SetXY(45, 265);
-        $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
-        
-        $pdf->SetXY(45, 270);
-        $pdf->Cell(60, 5, utf8_decode($_REQUEST['plazo']), 0, 0, 'L');
-        
-        // Bottom Right: Total
-        $total = 0;
-        if(isset($_REQUEST['det_cantidad']) && isset($_REQUEST['det_importe'])) {
-            foreach($_REQUEST['det_cantidad'] as $key => $cantidad) {
-                if(!empty($_REQUEST['det_importe'][$key])) {
-                    $total += (float)$_REQUEST['det_importe'][$key] * (int)$cantidad;
-                }
-            }
-        }
-        $pdf->SetXY(145, 270);
-        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total, 2), 0, 0, 'R');
-
-        // Bottom Center: Observaciones
-        $pdf->SetXY(109, 261.5);
-        $pdf->MultiCell(90, 4, utf8_decode($_REQUEST['PresupVndCom']), 0, 'L');
+        // Footer en la ultima pagina
+        $renderFooter();
 
         $filename = 'scratch/temp_presupuesto_' . time() . '.pdf';
         $pdf->Output('F', $filename);
@@ -260,23 +295,10 @@ class PresupuestoController{
         require_once 'fpdf/fpdf.php';
         
         $pdf = new FPDF('P', 'mm', 'A4');
-        $pdf->AddPage();
-        
-        // Background
+        $pdf->SetAutoPageBreak(false, 0);
+
+        // === Preparar datos ===
         $background_path = 'assets/sheet/Presupuesto_page-0001.jpg';
-        if(file_exists($background_path)) {
-            $pdf->Image($background_path, 0, 0, 210, 297);
-        }
-        
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->SetTextColor(0, 0, 0);
-        
-        // Top Right: NRO & FECHA
-        $pdf->SetXY(155, 9.5);
-        $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
-        
-        $pdf->SetXY(158, 13.5);
-        $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
         
         // Fetch Cliente Data
         $cliente_nombre = 'Sin Datos';
@@ -297,23 +319,6 @@ class PresupuestoController{
             }
         }
         
-        // Switch to regular font for client data values
-        $pdf->SetFont('Arial', '', 9);
-        
-        // Middle Left: Cliente
-        $pdf->SetXY(22, 45.5);
-        $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(22, 50);
-        $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(25, 55);
-        $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
-        
-        // Middle Right: Localidad & CUIT
-        $pdf->SetXY(89, 50);
-        $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(82, 55);
-        $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
-        
         // Fetch Medico
         $medico_nombre = 'Sin Datos';
         if(!empty($alm->cod_medico)) {
@@ -325,28 +330,124 @@ class PresupuestoController{
             }
         }
         
-        // Patient / Doctor section - regular font
-        $pdf->SetFont('Arial', '', 9);
+        // Pre-computar datos del footer
+        $fpago_name = '';
+        require_once 'model/presupuesto.php';
+        $pModel = new Presupuesto();
+        foreach($pModel->buscapagos() as $p) {
+            if($p->FfaCod == $alm->f_pago) {
+                $fpago_name = $p->FfaDesc;
+                break;
+            }
+        }
         
-        // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(20, 67);
-        $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
-        $pdf->SetXY(29, 72);
-        $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
-        $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+        $total_general = 0;
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $total_general += (float)$d->importe;
+            }
+        }
+
+        // === Closure: Renderizar encabezado (background + header) ===
+        $renderHeader = function() use ($pdf, $background_path, $alm, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+            // Background
+            if(file_exists($background_path)) {
+                $pdf->Image($background_path, 0, 0, 210, 297);
+            }
+            
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->SetTextColor(0, 0, 0);
+            
+            // Top Right: NRO & FECHA
+            $pdf->SetXY(155, 9.5);
+            $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
+            
+            $pdf->SetXY(158, 13.5);
+            $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
+            
+            // Switch to regular font for client data values
+            $pdf->SetFont('Arial', '', 9);
+            
+            // Middle Left: Cliente
+            $pdf->SetXY(22, 45.5);
+            $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
+            $pdf->SetXY(22, 50);
+            $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
+            $pdf->SetXY(25, 55);
+            $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
+            
+            // Middle Right: Localidad & CUIT
+            $pdf->SetXY(89, 50);
+            $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
+            $pdf->SetXY(82, 55);
+            $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
+            
+            // Patient / Doctor section - regular font
+            $pdf->SetFont('Arial', '', 9);
+            
+            // Lower Middle Left: Paciente & Fecha/Hora Ap.
+            $pdf->SetXY(20, 67);
+            $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
+            $pdf->SetXY(29, 72);
+            $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
+            $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+            
+            // Lower Middle Right: Doctor & Institucion
+            $pdf->SetXY(84, 66.5);
+            $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
+            $pdf->SetXY(89, 72);
+            $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        };
+
+        // === Closure: Renderizar footer ===
+        $renderFooter = function() use ($pdf, $alm, $fpago_name, $total_general) {
+            $pdf->SetFont('Arial', '', 9);
+
+            // Bottom Left: Validez, Forma Pago, Plazo
+            $pdf->SetXY(45, 260);
+            $pdf->Cell(60, 5, date('d/m/Y', strtotime($alm->fecha_validez)), 0, 0, 'L');
+            
+            $pdf->SetXY(45, 265);
+            $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
+            
+            $pdf->SetXY(45, 270);
+            $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
+            
+            // Bottom Right: Total
+            $pdf->SetXY(145, 270);
+            $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total_general, 2), 0, 0, 'R');
+            
+            // Bottom Center: Observaciones
+            $pdf->SetXY(105, 260);
+            $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
+        };
         
-        // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(84, 66.5);
-        $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(89, 72);
-        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        // === Primera pagina ===
+        $pdf->AddPage();
+        $renderHeader();
         
-        // Grid Details
+        // === Grid Details ===
         $pdf->SetXY(10, 102);
         $y = 90;
         $pdf->SetFont('Arial', '', 9);
         if(isset($alm->detalles)) {
             foreach($alm->detalles as $d) {
+                // Estimar altura del item
+                $text_check = utf8_decode($d->detalle_ag);
+                $pdf->SetFont('Arial', '', 9);
+                $textWidth_check = $pdf->GetStringWidth($text_check);
+                $numLines_check = max(1, ceil($textWidth_check / 95));
+                $itemHeight_check = ($numLines_check * 5) + 2 + 6;
+
+                // Verificar si necesitamos nueva pagina
+                if ($y + $itemHeight_check > 249) {
+                    $renderFooter();
+                    $pdf->AddPage();
+                    $renderHeader();
+                    $y = 90;
+                    $pdf->SetFont('Arial', '', 9);
+                }
+
                 $pdf->SetXY(2, $y);
                 $pdf->Cell(20, 5, $d->item, 0, 0, 'C'); 
                 
@@ -369,40 +470,8 @@ class PresupuestoController{
             }
         }
         
-        // Bottom Left: Validez, Forma Pago, Plazo
-        $pdf->SetXY(45, 260);
-        $pdf->Cell(60, 5, date('d/m/Y', strtotime($alm->fecha_validez)), 0, 0, 'L');
-        
-        // Forma de pago name
-        $fpago_name = '';
-        require_once 'model/presupuesto.php';
-        $pModel = new Presupuesto();
-        foreach($pModel->buscapagos() as $p) {
-            if($p->FfaCod == $alm->f_pago) {
-                $fpago_name = $p->FfaDesc;
-                break;
-            }
-        }
-        
-        $pdf->SetXY(45, 265);
-        $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
-        
-        $pdf->SetXY(45, 270);
-        $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
-        
-        // Bottom Right: Total
-        $total = 0;
-        if(isset($alm->detalles)) {
-            foreach($alm->detalles as $d) {
-                $total += (float)$d->importe;
-            }
-        }
-        $pdf->SetXY(145, 270);
-        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total, 2), 0, 0, 'R');
-        
-        // Bottom Center: Observaciones
-        $pdf->SetXY(105, 260);
-        $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
+        // Footer en la ultima pagina
+        $renderFooter();
         
         // If download=1 parameter present, force file download; otherwise show inline
         $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
@@ -428,18 +497,9 @@ class PresupuestoController{
         require_once 'fpdf/fpdf.php';
         
         $pdf = new FPDF('P', 'mm', 'A4');
-        $pdf->AddPage();
-              
-        
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->SetTextColor(0, 0, 0);
-        
-        // Top Right: NRO & FECHA (same positioning as VerPDF)
-        $pdf->SetXY(155, 9.5);
-        $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
-        
-        $pdf->SetXY(158, 13.5);
-        $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
+        $pdf->SetAutoPageBreak(false, 0);
+
+        // === Preparar datos ===
         
         // Fetch Cliente Data
         $cliente_nombre = 'Sin Datos';
@@ -460,23 +520,6 @@ class PresupuestoController{
             }
         }
         
-        // Switch to regular font for client data values
-        $pdf->SetFont('Arial', '', 9);
-        
-        // Middle Left: Cliente
-        $pdf->SetXY(22, 45.5);
-        $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-        $pdf->SetXY(22, 50);
-        $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-        $pdf->SetXY(25, 55);
-        $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
-        
-        // Middle Right: Localidad & CUIT
-        $pdf->SetXY(89, 50);
-        $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-        $pdf->SetXY(82, 55);
-        $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
-        
         // Fetch Medico
         $medico_nombre = 'Sin Datos';
         if(!empty($alm->cod_medico)) {
@@ -487,29 +530,120 @@ class PresupuestoController{
                 $medico_nombre = $medico->mediconombre;
             }
         }
+
+        // Pre-computar datos del footer
+        $fpago_name = '';
+        require_once 'model/presupuesto.php';
+        $pModel = new Presupuesto();
+        foreach($pModel->buscapagos() as $p) {
+            if($p->FfaCod == $alm->f_pago) {
+                $fpago_name = $p->FfaDesc;
+                break;
+            }
+        }
         
-        // Patient / Doctor section - regular font
-        $pdf->SetFont('Arial', '', 9);
+        $total_general = 0;
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $total_general += (float)$d->importe;
+            }
+        }
+
+        // === Closure: Renderizar encabezado (sin background para remito) ===
+        $renderHeader = function() use ($pdf, $alm, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->SetTextColor(0, 0, 0);
+            
+            // Top Right: NRO & FECHA (same positioning as VerPDF)
+            $pdf->SetXY(155, 9.5);
+            $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
+            
+            $pdf->SetXY(158, 13.5);
+            $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
+            
+            // Switch to regular font for client data values
+            $pdf->SetFont('Arial', '', 9);
+            
+            // Middle Left: Cliente
+            $pdf->SetXY(22, 45.5);
+            $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
+            $pdf->SetXY(22, 50);
+            $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
+            $pdf->SetXY(25, 55);
+            $pdf->Cell(80, 5, utf8_decode($condicion_iva), 0, 0, 'L');
+            
+            // Middle Right: Localidad & CUIT
+            $pdf->SetXY(89, 50);
+            $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
+            $pdf->SetXY(82, 55);
+            $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
+            
+            // Patient / Doctor section - regular font
+            $pdf->SetFont('Arial', '', 9);
+            
+            // Lower Middle Left: Paciente & Fecha/Hora Ap.
+            $pdf->SetXY(20, 67);
+            $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
+            $pdf->SetXY(29, 72);
+            $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
+            $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+            
+            // Lower Middle Right: Doctor & Institucion
+            $pdf->SetXY(84, 66.5);
+            $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
+            $pdf->SetXY(89, 72);
+            $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+        };
+
+        // === Closure: Renderizar footer ===
+        $renderFooter = function() use ($pdf, $alm, $fpago_name, $total_general) {
+            $pdf->SetFont('Arial', '', 9);
+
+            // Bottom Left: Validez, Forma Pago, Plazo
+            $pdf->SetXY(45, 260);
+            $pdf->Cell(60, 5, date('d/m/Y', strtotime($alm->fecha_validez)), 0, 0, 'L');
+            
+            $pdf->SetXY(45, 265);
+            $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
+            
+            $pdf->SetXY(45, 270);
+            $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
+            
+            // Bottom Right: Total
+            $pdf->SetXY(145, 270);
+            $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total_general, 2), 0, 0, 'R');
+            
+            // Bottom Center: Observaciones
+            $pdf->SetXY(105, 260);
+            $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
+        };
         
-        // Lower Middle Left: Paciente & Fecha/Hora Ap.
-        $pdf->SetXY(20, 67);
-        $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
-        $pdf->SetXY(29, 72);
-        $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
-        $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+        // === Primera pagina ===
+        $pdf->AddPage();
+        $renderHeader();
         
-        // Lower Middle Right: Doctor & Institucion
-        $pdf->SetXY(84, 66.5);
-        $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
-        $pdf->SetXY(89, 72);
-        $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
-        
-        // Grid Details
+        // === Grid Details ===
         $pdf->SetXY(10, 102);
         $y = 90;
         $pdf->SetFont('Arial', '', 9);
         if(isset($alm->detalles)) {
             foreach($alm->detalles as $d) {
+                // Estimar altura del item
+                $text_check = utf8_decode($d->detalle_ag);
+                $pdf->SetFont('Arial', '', 9);
+                $textWidth_check = $pdf->GetStringWidth($text_check);
+                $numLines_check = max(1, ceil($textWidth_check / 95));
+                $itemHeight_check = ($numLines_check * 5) + 2 + 6;
+
+                // Verificar si necesitamos nueva pagina
+                if ($y + $itemHeight_check > 249) {
+                    $renderFooter();
+                    $pdf->AddPage();
+                    $renderHeader();
+                    $y = 90;
+                    $pdf->SetFont('Arial', '', 9);
+                }
+
                 $pdf->SetXY(2, $y);
                 $pdf->Cell(20, 5, $d->item, 0, 0, 'C'); 
                 
@@ -532,40 +666,8 @@ class PresupuestoController{
             }
         }
         
-        // Bottom Left: Validez, Forma Pago, Plazo
-        $pdf->SetXY(45, 260);
-        $pdf->Cell(60, 5, date('d/m/Y', strtotime($alm->fecha_validez)), 0, 0, 'L');
-        
-        // Forma de pago name
-        $fpago_name = '';
-        require_once 'model/presupuesto.php';
-        $pModel = new Presupuesto();
-        foreach($pModel->buscapagos() as $p) {
-            if($p->FfaCod == $alm->f_pago) {
-                $fpago_name = $p->FfaDesc;
-                break;
-            }
-        }
-        
-        $pdf->SetXY(45, 265);
-        $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
-        
-        $pdf->SetXY(45, 270);
-        $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
-        
-        // Bottom Right: Total
-        $total = 0;
-        if(isset($alm->detalles)) {
-            foreach($alm->detalles as $d) {
-                $total += (float)$d->importe;
-            }
-        }
-        $pdf->SetXY(145, 270);
-        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($total, 2), 0, 0, 'R');
-        
-        // Bottom Center: Observaciones
-        $pdf->SetXY(105, 260);
-        $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
+        // Footer en la ultima pagina
+        $renderFooter();
         
         // If download=1 parameter present, force file download; otherwise show inline
         $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
