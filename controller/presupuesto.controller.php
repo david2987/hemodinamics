@@ -274,7 +274,7 @@ class PresupuestoController{
         // Footer en la ultima pagina
         $renderFooter();
 
-        $filename = 'scratch/temp_presupuesto_' . time() . '.pdf';
+        $filename = 'scratch/Presupuesto_' . $_REQUEST['PresupuestoPaciente'] . '.pdf';
         $pdf->Output('F', $filename);
 
         header('Content-Type: application/json');
@@ -475,7 +475,7 @@ class PresupuestoController{
         
         // If download=1 parameter present, force file download; otherwise show inline
         $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
-        $pdf->Output($disposition, 'Presupuesto_' . $alm->cod_presupuesto . '.pdf');
+        $pdf->Output($disposition, 'Presupuesto_' . $alm->PresupuestoPaciente . '.pdf');
     }
     
     public function RemitoPDF() {
@@ -671,7 +671,7 @@ class PresupuestoController{
         
         // If download=1 parameter present, force file download; otherwise show inline
         $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
-        $pdf->Output($disposition, 'Remito_' . $alm->cod_presupuesto . '.pdf');
+        $pdf->Output($disposition, 'Remito_' . $alm->PresupuestoPaciente . '.pdf');
     }
     
     public function CaratulaPDF() {
@@ -867,6 +867,261 @@ class PresupuestoController{
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    public function EnviarEmailAutorizados() {
+        header('Content-Type: application/json');
+        try {
+            $fecha_reporte = isset($_POST['fecha_reporte']) && !empty($_POST['fecha_reporte']) ? $_POST['fecha_reporte'] : date('Y-m-d');
+            $pdo = Database::StartUp();
+
+            $query = "SELECT p.cod_presupuesto, p.fecha, p.PresupFecAut, p.PresupUsrCre, p.PresupEnviadoMail, p.PresupUsuSeg,
+                             c.nombre AS cliente_nombre, p.Licitacion_Nro, p.PresupuestoPaciente, m.mediconombre,
+                             p.PresupPrc, p.CprCod, cat.CprDes, v.VndNom, p.PresupVndCom, p.EspCod, s.EspDes, p.SueCod,
+                             sub.SueDes, p.PresupFecVnd
+                      FROM presupuestos p
+                      LEFT JOIN clientes c ON p.cod_cliente = c.cod_cliente
+                      LEFT JOIN medicos m ON p.cod_medico = m.cod_medico
+                      LEFT JOIN sisesp s ON p.EspCod = s.EspCod
+                      LEFT JOIN vtavnd v ON p.VndCod = v.VndCod
+                      LEFT JOIN sisespsub sub ON p.SueCod = sub.SueCod
+                      LEFT JOIN categoriapresupuesto cat ON p.CprCod = cat.CprCod
+                      WHERE (p.fecha = ? OR p.PresupFecAut = ? OR p.PresupFecSegVnd = ?) AND (p.EspCod = 3 OR p.EspCod = 4)
+                      ORDER BY p.cod_presupuesto DESC";
+
+            $stm = $pdo->prepare($query);
+            $stm->execute([$fecha_reporte, $fecha_reporte, $fecha_reporte]);
+            $budgets = $stm->fetchAll(PDO::FETCH_OBJ);
+
+            $autorizados = [];
+            $rechazados = [];
+            foreach ($budgets as $b) {
+                if ($b->EspCod == 3) {
+                    $autorizados[] = $b;
+                } elseif ($b->EspCod == 4) {
+                    $rechazados[] = $b;
+                }
+            }
+
+            // --- Generate Excel XML (SpreadsheetML) ---
+            $xls = '<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Hemodinamics</Author>
+  <Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#000000"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="Header">
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#206773" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CellText">
+   <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+  </Style>
+  <Style ss:ID="CellNumber">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <NumberFormat ss:Format="$#,##0.00"/>
+  </Style>
+  <Style ss:ID="CellDate">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+ </Styles>';
+
+            $generateSheet = function($title, $list) use ($pdo) {
+                $sheet = ' <Worksheet ss:Name="' . $title . '">
+  <Table>
+   <Row ss:Height="22" ss:StyleID="Header">
+    <Cell><Data ss:Type="String">N°</Data></Cell>
+    <Cell><Data ss:Type="String">Usr.</Data></Cell>
+    <Cell><Data ss:Type="String">Fecha Ppto.</Data></Cell>
+    <Cell><Data ss:Type="String">Seg.</Data></Cell>
+    <Cell><Data ss:Type="String">Usr. Seg.</Data></Cell>
+    <Cell><Data ss:Type="String">Fecha Aut.</Data></Cell>
+    <Cell><Data ss:Type="String">Cliente</Data></Cell>
+    <Cell><Data ss:Type="String">Lic.</Data></Cell>
+    <Cell><Data ss:Type="String">Paciente</Data></Cell>
+    <Cell><Data ss:Type="String">Medico</Data></Cell>
+    <Cell><Data ss:Type="String">Producto</Data></Cell>
+    <Cell><Data ss:Type="String">Aut. Precio</Data></Cell>
+    <Cell><Data ss:Type="String">Total</Data></Cell>
+    <Cell><Data ss:Type="String">Categoria</Data></Cell>
+    <Cell><Data ss:Type="String">Coordinador</Data></Cell>
+    <Cell><Data ss:Type="String">Comentarios</Data></Cell>
+    <Cell><Data ss:Type="String">Estado</Data></Cell>
+    <Cell><Data ss:Type="String">Motivo Per./Rech.</Data></Cell>
+    <Cell><Data ss:Type="String">Fecha Cx</Data></Cell>
+   </Row>';
+
+                foreach ($list as $r) {
+                    // Fetch details
+                    $sql_det = "SELECT prd.producto_titulo, d.cantidad, d.p_unitario, d.importe 
+                                FROM detalles_presupuesto d 
+                                INNER JOIN productos prd ON d.det_producto = prd.cod_producto 
+                                WHERE d.cod_presupuesto = ? 
+                                ORDER BY d.item";
+                    $stm_det = $pdo->prepare($sql_det);
+                    $stm_det->execute([$r->cod_presupuesto]);
+                    $details = $stm_det->fetchAll(PDO::FETCH_OBJ);
+
+                    $prod_str = '';
+                    $total_general = 0;
+                    foreach ($details as $d) {
+                        $prod_str .= '* ' . $d->producto_titulo . ' (' . $d->cantidad . ') - $' . number_format($d->p_unitario, 2, ',', '.') . "\n";
+                        $total_general += (float)$d->importe;
+                    }
+                    $prod_str = rtrim($prod_str, "\n");
+
+                    // Format dates
+                    $fecha_ppto = !empty($r->fecha) ? date('d/m/Y', strtotime($r->fecha)) : '';
+                    $fecha_aut = (!empty($r->PresupFecAut) && $r->PresupFecAut !== '1000-01-01' && $r->PresupFecAut !== '0000-00-00') ? date('d/m/Y', strtotime($r->PresupFecAut)) : '';
+                    $fecha_cx = (!empty($r->PresupFecVnd) && $r->PresupFecVnd !== '1000-01-01' && $r->PresupFecVnd !== '0000-00-00') ? date('d/m/Y', strtotime($r->PresupFecVnd)) : '';
+
+                    // Seg & Lic
+                    $seg = ($r->PresupEnviadoMail == 'S') ? 'SI' : 'NO';
+                    $lic = '';
+                    if ($r->Licitacion_Nro == 1) {
+                        $lic = 'LIC';
+                    } elseif ($r->Licitacion_Nro == 2 || $r->Licitacion_Nro == 0) {
+                        $lic = 'NOL';
+                    }
+
+                    // Clean comments
+                    $comentarios = $r->PresupVndCom;
+                    $comentarios = str_replace(['<BR>', '<br>', '</br>', "\r", "\n"], ' ', $comentarios);
+
+                    $sheet .= '
+   <Row ss:Height="30" ss:StyleID="CellText">
+    <Cell><Data ss:Type="Number">' . $r->cod_presupuesto . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars(substr(strtoupper($r->PresupUsrCre), 0, 3), ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellDate"><Data ss:Type="String">' . htmlspecialchars($fecha_ppto, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellDate"><Data ss:Type="String">' . htmlspecialchars($seg, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars(substr(strtoupper($r->PresupUsuSeg), 0, 3), ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellDate"><Data ss:Type="String">' . htmlspecialchars($fecha_aut, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->cliente_nombre, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellDate"><Data ss:Type="String">' . htmlspecialchars($lic, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->PresupuestoPaciente, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->mediconombre, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($prod_str, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars(substr($r->PresupPrc, 0, 3), ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellNumber"><Data ss:Type="Number">' . $total_general . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->CprDes, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->VndNom, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($comentarios, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->EspDes, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell><Data ss:Type="String">' . htmlspecialchars($r->SueDes, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+    <Cell ss:StyleID="CellDate"><Data ss:Type="String">' . htmlspecialchars($fecha_cx, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>
+   </Row>';
+                }
+
+                $sheet .= '
+  </Table>
+ </Worksheet>';
+                return $sheet;
+            };
+
+            $xls .= $generateSheet('Autorizados', $autorizados);
+            $xls .= $generateSheet('Rechazados', $rechazados);
+            $xls .= '</Workbook>';
+
+            // ==========================================
+            // CONFIGURACIÓN SMTP (PHPMailer)
+            // ==========================================
+            $smtp_config = [
+                'host'       => 'mail.hemodinamics.com',         // Cambia por tu servidor SMTP (ej: smtp.gmail.com)
+                'username'   => 'presupuestos@hemodinamics.com',    // Cambia por tu usuario SMTP (ej: ventas@hemodinamics.com)
+                'password'   => 'Presu514',          // Cambia por tu contraseña o token de app SMTP
+                'port'       => 587,                      // Puerto (587 para TLS, 465 para SSL)
+                'encryption' => 'tls',                    // 'tls', 'ssl' o vacío ''
+                'from_email' => 'presupuestos@hemodinamics.com',
+                'from_name'  => 'Sistema Hemodinamics'
+            ];
+            // ==========================================
+
+            $fecha_formatted = date('d/m/Y', strtotime($fecha_reporte));
+            $to = 'ventas@hemodinamics.com';
+            $subject = 'Reporte de Presupuestos - ' . $fecha_formatted;
+            $filename_attachment = 'Reporte-Presupuestos-' . $fecha_reporte . '.xls';
+
+            require_once 'vendor/autoload.php';
+
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host       = $smtp_config['host'];
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $smtp_config['username'];
+            $mail->Password   = $smtp_config['password'];
+            $mail->Port       = $smtp_config['port'];
+            
+            if ($smtp_config['encryption'] === 'tls') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            } elseif ($smtp_config['encryption'] === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } else {
+                $mail->SMTPSecure = '';
+                $mail->SMTPAutoTLS = false;
+            }
+
+            // Character set
+            $mail->CharSet = 'UTF-8';
+
+            // Recipients
+            $mail->setFrom($smtp_config['from_email'], $smtp_config['from_name']);
+            $mail->addAddress($to);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+
+            // HTML Body
+            $html_body = "<p>Hola,</p>";
+            $html_body .= "<p>Se adjunta el reporte de presupuestos de la fecha <strong>" . $fecha_formatted . "</strong>.</p>";
+            $html_body .= "<p>El archivo adjunto contiene dos pestañas:</p>";
+            $html_body .= "<ul>";
+            $html_body .= "<li><strong>Autorizados:</strong> " . count($autorizados) . " presupuestos autorizados.</li>";
+            $html_body .= "<li><strong>Rechazados:</strong> " . count($rechazados) . " presupuestos rechazados.</li>";
+            $html_body .= "</ul>";
+            $html_body .= "<p>Saludos cordiales,<br>Sistema de Gestión Hemodinamics</p>";
+            $mail->Body = $html_body;
+
+            // Attach spreadsheet from string in memory
+            $mail->addStringAttachment($xls, $filename_attachment, 'base64', 'application/vnd.ms-excel');
+
+            $sent = $mail->send();
+
+            if ($sent) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'El correo ha sido enviado exitosamente a ' . $to
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se pudo enviar el correo. Verifique los datos de configuración SMTP.'
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
             ]);
         }
         exit;

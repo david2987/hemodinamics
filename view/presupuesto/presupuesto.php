@@ -253,7 +253,7 @@ if(empty($_GET['excel'])){ ?>
             <i class="fa-solid fa-rotate-left"></i> Limpiar
         </a>
         
-        <button type="button" class="btn btn-filter-action" onclick="abre('<?php echo $RutaappTomcat; ?>hemodinamicsJavaEnviroment/servlet/mailautorizados',400,300)">
+        <button type="button" class="btn btn-filter-action" id="btn-enviar-email-autorizados">
             <i class="fa-solid fa-paper-plane"></i> Enviar Email Autorizados
         </button>
         
@@ -880,6 +880,44 @@ function buscar()
   </div>
 </div>
 
+<!-- Modal Enviar Email Autorizados -->
+<div class="modal fade" id="modalEnviarEmail" tabindex="-1" role="dialog" aria-labelledby="modalEnviarEmailLabel">
+  <div class="modal-dialog" role="document" style="max-width: 450px;">
+    <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+      <form id="frm-enviar-email-autorizados" method="post">
+        <div class="modal-header" style="background: linear-gradient(135deg, #206773 0%, #174b54 100%); color: white; padding: 20px;">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="modalEnviarEmailLabel" style="font-weight: bold; display: flex; align-items: center; gap: 10px; color: white !important;">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Reporte de Presupuestos
+          </h4>
+        </div>
+        
+        <div class="modal-body" style="padding: 25px; background-color: #f8fafc;">
+          <div class="form-group">
+            <label style="font-weight: 600; color: #475569; margin-bottom: 8px;">Seleccionar Fecha del Reporte (*)</label>
+            <input type="date" name="fecha_reporte" id="env_fecha_reporte" class="form-control" required style="border-radius: 6px; border: 1px solid #cbd5e1; height: 42px;" value="<?php echo date('Y-m-d'); ?>" />
+          </div>
+          <div style="margin-top: 15px; font-size: 13px; color: #64748b; line-height: 1.5;">
+            Se generará un archivo Excel con dos hojas:
+            <ul style="margin-top: 5px; padding-left: 20px;">
+              <li><strong>Autorizados:</strong> Presupuestos con estado Autorizado (EspCod = 3) para la fecha seleccionada.</li>
+              <li><strong>Rechazados:</strong> Presupuestos con estado Rechazado (EspCod = 4) para la fecha seleccionada.</li>
+            </ul>
+            El reporte se enviará por correo a: <strong>ventas@hemodinamics.com</strong>
+          </div>
+        </div>
+        
+        <div class="modal-footer" style="background-color: #f1f5f9; padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius: 6px; font-weight: bold; padding: 8px 16px;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="border-radius: 6px; font-weight: bold; padding: 8px 20px; background-color: #206773; border: none; color: white;">
+            <i class="fa-solid fa-envelope"></i> Enviar Correo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
     // 1. Initialize easyAutocomplete on the modal's doctor field
@@ -1085,6 +1123,42 @@ $(document).ready(function() {
             error: function() {
                 alert("Error al guardar la anulación.");
                 submitBtn.prop('disabled', false).html('<i class="fa-solid fa-trash-can"></i> Anular Presupuesto');
+            }
+        });
+    });
+    // 7. Click handler for Enviar Email Autorizados
+    $(document).on('click', '#btn-enviar-email-autorizados', function(e) {
+        e.preventDefault();
+        $("#modalEnviarEmail").modal('show');
+    });
+
+    // 8. Submit Enviar Email form via AJAX
+    $("#frm-enviar-email-autorizados").submit(function(e) {
+        e.preventDefault();
+        
+        var submitBtn = $(this).find('button[type="submit"]');
+        var originalHtml = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Enviando...');
+        
+        var formData = $(this).serialize();
+        
+        $.ajax({
+            url: '?c=presupuesto&a=EnviarEmailAutorizados',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    alert(res.message);
+                    $("#modalEnviarEmail").modal('hide');
+                } else {
+                    alert("Error: " + res.message);
+                }
+                submitBtn.prop('disabled', false).html(originalHtml);
+            },
+            error: function() {
+                alert("Error al procesar el envío del correo.");
+                submitBtn.prop('disabled', false).html(originalHtml);
             }
         });
     });

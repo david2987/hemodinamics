@@ -64,7 +64,7 @@ class presupuesto
 			$sql .=' LEFT JOIN  sisesp ON presupuestos.EspCod = sisesp.EspCod ';
 			$sql .=" LEFT JOIN  vtavnd ON presupuestos.VndCod = vtavnd.VndCod ";
 			$sql .=" LEFT JOIN  sisespsub  as Tabla1 ON presupuestos.SueCod = Tabla1.SueCod ";
-			$sql .=" LEFT JOIN  categoriapresupuesto ON Presupuestos.CprCod = categoriapresupuesto.CprCod ";
+			$sql .=" LEFT JOIN  categoriapresupuesto ON presupuestos.CprCod = categoriapresupuesto.CprCod ";
 			$sql .= "where PresupuestoPaciente <> '' ".$where;			
 			$sql .= ' ORDER BY presupuestos.cod_presupuesto desc  LIMIT '.$limit ;
 
@@ -254,7 +254,7 @@ class presupuesto
 			$sql .=' LEFT JOIN sisesp ON presupuestos.EspCod = sisesp.EspCod ';
 			$sql .=" LEFT JOIN vtavnd ON presupuestos.VndCod = vtavnd.VndCod ";
 			$sql .=" LEFT JOIN sisespsub ON presupuestos.SueCod = sisespsub.SueCod ";
-			$sql .=" LEFT JOIN categoriapresupuesto ON Presupuestos.CprCod = categoriapresupuesto.CprCod ";
+			$sql .=" LEFT JOIN categoriapresupuesto ON presupuestos.CprCod = categoriapresupuesto.CprCod ";
 			$sql .= "LEFT JOIN detalles_presupuesto on presupuestos.cod_presupuesto = detalles_presupuesto.cod_presupuesto ";
 			$sql .= "where PresupuestoPaciente <> '' ".$where.' LIMIT '.$limit;									
 			$stm = $this->pdo->prepare($sql);
