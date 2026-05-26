@@ -179,26 +179,26 @@ class PresupuestoController{
             foreach($_REQUEST['det_cod_producto'] as $key => $val) {
                 if(empty($val)) continue;
                 
-
-                $pdf->SetXY(12, $y);
+                $pdf->SetXY(2, $y);
                 $pdf->Cell(20, 5, $key == 0 ? '1' : $key + 1, 0, 0, 'C'); 
                 
-                $pdf->SetXY(50, $y);
+                $pdf->SetXY(19, $y);
                 $pdf->Cell(15, 5, $_REQUEST['det_cantidad'][$key], 0, 0, 'C'); 
                             
-                $pdf->SetXY(160, $y);
+                $pdf->SetXY(152, $y);
                 $pdf->Cell(20, 5, '$ ' . number_format($_REQUEST['det_importe'][$key], 2), 0, 0, 'R'); 
                 
-                $pdf->SetXY(183, $y);
+                $pdf->SetXY(180, $y);
                 $total = $_REQUEST['det_cantidad'][$key] * $_REQUEST['det_importe'][$key];
                 $pdf->Cell(20, 5, '$ ' . number_format($total, 2), 0, 0, 'R'); 
                 
 
-                $pdf->SetXY(80, $y);
+                $pdf->SetXY(40, $y);
                 $pdf->MultiCell(80, 5, utf8_decode($_REQUEST['det_detalle'][$key]), 0, 'L');             
                 $y = $pdf->GetY() + 2;
 
                 $y += 6;
+                
             }
         }
 

@@ -300,6 +300,8 @@ $where= buscar();
             <th style="width:10px;"></th>
             <th style="width:10px;"></th>
             <th style="width:10px;"></th>
+             <th style="width:10px;"></th>
+              <th style="width:10px;"></th>
             <?php } ?>
             <th style="width:60px;">N°</th>
             <th style="width:60px;">Usr.</th>
