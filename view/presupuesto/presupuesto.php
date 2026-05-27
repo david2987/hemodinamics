@@ -288,7 +288,7 @@ $where= buscar();
 } else {
     $where= buscar();
 }?>
-<table class="table table-striped" id="Grilla" style="width: 100% !important;">
+<table  id="Grilla" style="width: 5000px !important;">
     <thead>
         <tr>
           <!--
@@ -297,9 +297,9 @@ $where= buscar();
          -->   
          <?php if(empty($_GET['excel']))
                     { ?>
-            <th style="width:10px;"></th>
-            <th style="width:10px;"></th>
-            <th style="width:10px;"></th>
+            <th style="width:10px;">P</th>
+            <th style="width:10px;">R</th>
+            <th style="width:10px;">C</th>
              <th style="width:10px;"></th>
               <th style="width:10px;"></th>
             <?php } ?>
@@ -336,7 +336,7 @@ $where= buscar();
     <?php     
     foreach($this->model->Listar($where,$limit) as $r): ?>
         
-        <tr <?php if($r->PresupRecPre == 1){echo "style='background-color:#fad000'"; } ?> id="Fila<?php echo $r->cod_presupuesto; ?>" >
+        <tr <?php if($r->PresupRecPre == 1){echo "style='background-color:#fad000'"; } ?> id="Fila<?php echo $r->cod_presupuesto; ?>"     style="border-bottom: 0.5px solid #CCC; " >
       
         
          <?php if(empty($_GET['excel'])) { ?>
@@ -352,7 +352,11 @@ $where= buscar();
                 <?php } ?>
                 
                 <!-- VISUALIZAR CARÁTULA PDF -->
-                <td style="width: 10px;padding:4px"><a title='Visualizar Carátula PDF' href="?c=presupuesto&a=CaratulaPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/print.png' style="filter: sepia(0.5) hue-rotate(30deg);"></a></td>
+                  <?php if($r->EspCod == 3) { ?>
+                <td style="width: 10px;padding:4px"><a title='Visualizar Carátula PDF' href="?c=presupuesto&a=CaratulaPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/Lists.png' style="filter: sepia(0.5) hue-rotate(30deg);"></a></td>
+                  <?php } else { ?>
+                  <td style="width: 10px;padding:4px;"><img src='assets/image/Lists.png' title="Solo para presupuestos autorizados" style="opacity: 0.5;"></td>
+                  <?php } ?>
 
                 <!-- EDITAR (solo vencidos, perdidos o pendientes) -->
              <?php if($r->EspCod == 1 || $r->EspCod == 2 || $r->EspCod == 5){ ?> 
