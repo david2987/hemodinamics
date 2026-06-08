@@ -382,6 +382,22 @@ class presupuesto
         }
     }
 
+
+      public function buscainstitucion()
+    {
+        try
+        {
+            $sql = 'select * from hospitales';
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute();
+            return $stm->fetchAll(PDO::FETCH_OBJ);	
+        }
+        catch(Exception $e)
+        {
+            die($e->getMessage());
+        }
+    }
+
     public function ProximoNro()
     {
         try
