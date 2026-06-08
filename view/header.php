@@ -443,7 +443,7 @@ try {
 
 
                 var id = $(this).attr('value');
-                var jqxhr = $.ajax("<?php echo $Rutaapp; ?>consultapto/view/Resalta.php?id=" + id)
+                var jqxhr = $.ajax("<?php echo $Rutaapp; ?>view/Resalta.php?id=" + id)
                     .done(function(data) {
 
                         if (data == 0) {
@@ -487,7 +487,7 @@ try {
             // BUSCA PRODUCTOS      
             var options = {
                 url: function(phrase) {
-                    return "<?php echo $Rutaapp; ?>consultapto/view/buscaproductos.php?phrase=" + phrase + "&format=json";
+                    return "<?php echo $Rutaapp; ?>view/buscaproductos.php?phrase=" + phrase + "&format=json";
                 },
                 getValue: function(element) {
                     return element.name;
@@ -533,7 +533,7 @@ try {
             // BUSCA MEDICOS        
             var options2 = {
                 url: function(phrase) {
-                    return "<?php echo $Rutaapp; ?>consultapto/view/buscamedico.php?phrase=" + phrase + "&format=json";
+                    return "<?php echo $Rutaapp; ?>view/buscamedico.php?phrase=" + phrase + "&format=json";
                 },
                 getValue: function(element) {
                     return element.name;
@@ -569,7 +569,7 @@ try {
             // BUSCA COORDINADORES
             var options3 = {
                 url: function(phrase) {
-                    return "<?php echo $Rutaapp; ?>consultapto/view/buscacoordinadores.php?phrase=" + phrase + "&format=json";
+                    return "<?php echo $Rutaapp; ?>view/buscacoordinadores.php?phrase=" + phrase + "&format=json";
                 },
                 getValue: function(element) {
                     return element.name;
@@ -605,7 +605,7 @@ try {
             // BUSCA CLIENTES
             var options4 = {
                 url: function(phrase) {
-                    return "<?php echo $Rutaapp; ?>consultapto/view/buscacliente.php?phrase=" + phrase + "&format=json";
+                    return "<?php echo $Rutaapp; ?>view/buscacliente.php?phrase=" + phrase + "&format=json";
                 },
                 getValue: function(element) {
                     return element.name;
@@ -641,7 +641,7 @@ try {
             // BUSCA HOSPITALES
             var options5 = {
                 url: function(phrase) {
-                    return "<?php echo $Rutaapp; ?>consultapto/view/buscahospitales.php?phrase=" + phrase + "&format=json";
+                    return "<?php echo $Rutaapp; ?>view/buscahospitales.php?phrase=" + phrase + "&format=json";
                 },
                 getValue: function(element) {
                     return element.name;
@@ -794,6 +794,9 @@ try {
                 </li>
                 <li class="sidebar-menu-item <?php echo $activeController === 'sisgru' ? 'active' : ''; ?>">
                     <a href="index.php?c=sisgru"><i class="fa-solid fa-users-gear"></i><span>Grupos Usuarios</span></a>
+                </li>
+                <li class="sidebar-menu-item <?php echo $activeController === 'sispar' ? 'active' : ''; ?>">
+                    <a href="index.php?c=sispar"><i class="fa-solid fa-gears"></i><span>Parámetros</span></a>
                 </li>
                 <li class="sidebar-menu-item <?php echo $activeController === 'usuarios' ? 'active' : ''; ?>">
                     <a href="index.php?c=usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>

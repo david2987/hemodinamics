@@ -249,7 +249,7 @@ if(empty($_GET['excel'])){ ?>
             <i class="fa-solid fa-magnifying-glass"></i> Buscar
         </button>
         
-        <a class="btn btn-filter-clear" href="<?php echo $Rutaapp; ?>consultapto/limpia.php">
+        <a class="btn btn-filter-clear" href="<?php echo $Rutaapp; ?>/limpia.php">
             <i class="fa-solid fa-rotate-left"></i> Limpiar
         </a>
         
@@ -610,7 +610,7 @@ function buscar()
     }
     if(!empty($_POST['Producto']))
     {    
-        $where .= " and Presupuestos.PresupProductos like '%".$_POST['CodProducto']."%'";//."'%".FixComilla($_POST['Producto'])."%'";
+        $where .= " and presupuestos.PresupProductos like '%".$_POST['CodProducto']."%'";//."'%".FixComilla($_POST['Producto'])."%'";
         /*
         $_POST['Producto'] = substr($_POST['Producto'],0,strlen($_POST['Producto']) - 1);
         $producto = explode(';',$_POST['Producto']);

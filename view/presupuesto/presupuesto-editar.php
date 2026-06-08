@@ -150,9 +150,7 @@ if(!empty($alm->cod_medico)) {
                                 <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
                                 <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
                             </td>
-                            <td><textarea type="text" name="det_detalle[]" class="form-control input-md" style="width: 100%; height: 134px;">
-                                <?php echo $d->detalle_ag; ?>
-                            </textarea></td>
+                            <td><textarea type="text" name="det_detalle[]" class="form-control input-md" style="width: 100%; height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
                             <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
                             <td><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
                             <td class="row-total"><?php echo number_format($d->importe, 2); ?></td>
