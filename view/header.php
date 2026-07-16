@@ -798,6 +798,9 @@ try {
                 <li class="sidebar-menu-item <?php echo $activeController === 'sispar' ? 'active' : ''; ?>">
                     <a href="index.php?c=sispar"><i class="fa-solid fa-gears"></i><span>Parámetros</span></a>
                 </li>
+                <li class="sidebar-menu-item <?php echo $activeController === 'sisffa' ? 'active' : ''; ?>">
+                    <a href="index.php?c=sisffa"><i class="fa-solid fa-credit-card"></i><span>Formas de Pago</span></a>
+                </li>
                 <li class="sidebar-menu-item <?php echo $activeController === 'usuarios' ? 'active' : ''; ?>">
                     <a href="index.php?c=usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>
                 </li>

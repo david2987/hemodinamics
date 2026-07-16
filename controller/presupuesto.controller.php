@@ -41,16 +41,10 @@ class PresupuestoController{
         $alm->fecha_validez = $_REQUEST['fecha_validez'];
         $alm->f_pago = $_REQUEST['f_pago'];
         $alm->plazo = $_REQUEST['plazo'];
-        $alm->Licitacion_Nro = isset($_REQUEST['Licitacion_Nro']) ? 1 : 0;
         $alm->PresupuestoPaciente = $_REQUEST['PresupuestoPaciente'];
-        // $alm->PresupDisAlt = $_REQUEST['PresupDisAlt'];
         $alm->CprCod = $_REQUEST['CprCod'];
+        $alm->HospCod = !empty($_REQUEST['HospCod']) ? $_REQUEST['HospCod'] : null;
         $alm->PresupVndCom = $_REQUEST['PresupVndCom'];
-        $alm->PresupFecSeg = !empty($_REQUEST['PresupFecSeg']) ? $_REQUEST['PresupFecSeg'] : date('Y-m-d');
-        $alm->PresupHorSeg = !empty($_REQUEST['PresupHorSeg']) ? $_REQUEST['PresupHorSeg'] : date('H:i');
-        $alm->PresupRel = !empty($_REQUEST['PresupRel']) ? $_REQUEST['PresupRel'] : 0;
-        $alm->Expendiente_nro = $_REQUEST['Expendiente_nro'];
-        $alm->PresupEnviadoMail = isset($_REQUEST['PresupEnviadoMail']) ? 1 : 0;
 
         $detalles = [];
         if(isset($_REQUEST['det_cod_producto'])) {
@@ -146,8 +140,22 @@ class PresupuestoController{
             }
         }
 
+        // Pre-computar hospital
+        $preview_hosp_name = '';
+        $hospCodPreview = !empty($_REQUEST['HospCod']) ? (int)$_REQUEST['HospCod'] : 0;
+        if ($hospCodPreview) {
+            require_once 'model/presupuesto.php';
+            $tmpModel = new Presupuesto();
+            foreach($tmpModel->buscainstitucion() as $p) {
+                if($p->HospCod == $hospCodPreview) {
+                    $preview_hosp_name = $p->HospDesc;
+                    break;
+                }
+            }
+        }
+
         // === Closure: Renderizar encabezado (background + header) ===
-        $renderHeader = function() use ($pdf, $background_path, $nro, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+        $renderHeader = function() use ($pdf, $background_path, $nro, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre, $preview_hosp_name) {
             // Background
             if(file_exists($background_path)) {
                 $pdf->Image($background_path, 0, 0, 210, 297);
@@ -183,18 +191,15 @@ class PresupuestoController{
             // Patient / Doctor section - regular font
             $pdf->SetFont('Arial', '', 9);
 
-            // Lower Middle Left: Paciente & Fecha/Hora Ap.
+            // Lower Middle Left: Paciente
             $pdf->SetXY(20, 67);
             $pdf->Cell(80, 5, utf8_decode($_REQUEST['PresupuestoPaciente']), 0, 0, 'L');
-            $pdf->SetXY(29, 72);
-            $fecha_hora_ap = $_REQUEST['PresupFecSeg'] . ' ' . $_REQUEST['PresupHorSeg'];
-            $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
             
-            // Lower Middle Right: Doctor & Institucion
+            // Lower Middle Right: Doctor & Servicio
             $pdf->SetXY(84, 66.5);
             $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
             $pdf->SetXY(89, 72);
-            $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+            $pdf->Cell(85, 5, utf8_decode($preview_hosp_name), 0, 0, 'L');
         };
 
         // === Closure: Renderizar footer ===
@@ -348,8 +353,21 @@ class PresupuestoController{
             }
         }
 
+        // Pre-computar hospital
+        $ver_hosp_name = '';
+        if (!empty($alm->HospCod)) {
+            require_once 'model/presupuesto.php';
+            $tmpModel = new Presupuesto();
+            foreach($tmpModel->buscainstitucion() as $p) {
+                if($p->HospCod == $alm->HospCod) {
+                    $ver_hosp_name = $p->HospDesc;
+                    break;
+                }
+            }
+        }
+
         // === Closure: Renderizar encabezado (background + header) ===
-        $renderHeader = function() use ($pdf, $background_path, $alm, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+        $renderHeader = function() use ($pdf, $background_path, $alm, $cliente_nombre, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre, $ver_hosp_name) {
             // Background
             if(file_exists($background_path)) {
                 $pdf->Image($background_path, 0, 0, 210, 297);
@@ -392,11 +410,11 @@ class PresupuestoController{
             $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
             $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
             
-            // Lower Middle Right: Doctor & Institucion
+            // Lower Middle Right: Doctor & Servicio
             $pdf->SetXY(84, 66.5);
             $pdf->Cell(85, 5, utf8_decode($medico_nombre), 0, 0, 'L');
             $pdf->SetXY(89, 72);
-            $pdf->Cell(85, 5, utf8_decode('Hospital / Clinica'), 0, 0, 'L');
+            $pdf->Cell(85, 5, utf8_decode($ver_hosp_name), 0, 0, 'L');
         };
 
         // === Closure: Renderizar footer ===
@@ -493,6 +511,12 @@ class PresupuestoController{
         if($alm->EspCod != 3) {
             die("Solo se puede generar remito para presupuestos autorizados");
         }
+
+        // Use hospCod from modal if provided, otherwise fallback to existing
+        $hospCod = !empty($_REQUEST['hospCod']) ? (int)$_REQUEST['hospCod'] : $alm->HospCod;
+
+        // Use fecha_remito from modal if provided, otherwise fallback to original
+        $fecha_remito = !empty($_REQUEST['fecha_remito']) ? $_REQUEST['fecha_remito'] : $alm->fecha;
         
         require_once 'fpdf/fpdf.php';
         
@@ -547,7 +571,7 @@ class PresupuestoController{
         require_once 'model/presupuesto.php';
         $pModel = new Presupuesto();
         foreach($pModel->buscainstitucion() as $p) {
-            if($p->HospCod == $alm->HospCod) {
+            if($p->HospCod == $hospCod) {
                 $hosp_name = $p->HospDesc;
                 break;
             }
@@ -561,7 +585,7 @@ class PresupuestoController{
         }
 
         // === Closure: Renderizar encabezado (sin background para remito) ===
-        $renderHeader = function() use ($pdf, $alm, $cliente_nombre,$fpago_name, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre) {
+        $renderHeader = function() use ($pdf, $alm, $cliente_nombre,$fpago_name, $domicilio, $condicion_iva, $localidad, $cuit, $medico_nombre, $fecha_remito) {
             $pdf->SetFont('Arial', 'B', 12);
             $pdf->SetTextColor(0, 0, 0);
             
@@ -570,7 +594,7 @@ class PresupuestoController{
             // $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
             
             $pdf->SetXY(152, 29.5);
-            $pdf->Cell(50, 5, date('d   m   Y', strtotime($alm->fecha)), 0, 0, 'L');
+            $pdf->Cell(50, 5, date('d   m   Y', strtotime($fecha_remito)), 0, 0, 'L');
             
             // Switch to regular font for client data values
             $pdf->SetFont('Arial', '', 9);
@@ -827,9 +851,10 @@ class PresupuestoController{
             $cod_medico = (int)$_REQUEST['cod_medico'];
             $vndCod = (int)$_REQUEST['VndCod'];
             $comentario = $_REQUEST['PresupVndCom'];
+            $hospCod = !empty($_REQUEST['HospCod']) ? (int)$_REQUEST['HospCod'] : null;
             $items_a_eliminar = isset($_REQUEST['items_a_eliminar']) ? $_REQUEST['items_a_eliminar'] : [];
 
-            $this->model->AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $items_a_eliminar);
+            $this->model->AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $hospCod, $items_a_eliminar);
 
             echo json_encode([
                 'success' => true,

@@ -1,25 +1,22 @@
 <?php
-  header('Content-Type: application/json charset=UTF-8');
+header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../model/database.php';
 $conn = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME) or die("Connection failed: " . mysqli_connect_error());
 
- 
+$titulo = $_GET['phrase'];
+$sql = "SELECT HospCod, HospDesc, HospLoc FROM hospitales WHERE HospDesc LIKE '%".mysqli_real_escape_string($conn, $titulo)."%' OR HospLoc LIKE '%".mysqli_real_escape_string($conn, $titulo)."%' LIMIT 30";
+$queryRecords = mysqli_query($conn, $sql) or die('error to fetch data');
 
-  $titulo = $_GET['phrase'];
-  $sql = "SELECT HospDesc,HospCod FROM hospitales where HospDesc like '%".$titulo."%' ";
- $queryRecords = mysqli_query($conn, $sql) or die('error to fetch  data');
-
- $json = '['; 
+$json = '[';
 foreach($queryRecords as $res):
-    $json .= '{"name":"'.trim($res['HospDesc']).'","cod_producto":"'.trim($res['HospCod']).'"},' ;
+    $display = trim($res['HospDesc']) . (trim($res['HospLoc']) ? ' - ' . trim($res['HospLoc']) : '');
+    $json .= '{"name":"'.addslashes($display).'","cod_producto":"'.trim($res['HospCod']).'"},';
 endforeach;
-$json = substr($json, 0, -1);
-$json .= ']'; 
+$json = rtrim($json, ',');
+$json .= ']';
 
-/*limpia caracteres*/ 
 $json = trim($json);
 $json = preg_replace("/[\r\n|\n|\r]+/", "\\n", $json);
-/******************/
 
-echo utf8_encode($json);
+echo $json;
 ?>

@@ -18,6 +18,16 @@ if(!empty($alm->cod_medico)) {
         $medico_nombre_val = $medico->mediconombre;
     }
 }
+
+$hospital_nombre_val = '';
+if(!empty($alm->HospCod)) {
+    require_once 'model/hospitales.php';
+    $hospModel = new Hospitales();
+    $hospital = $hospModel->Obtener($alm->HospCod);
+    if($hospital) {
+        $hospital_nombre_val = trim($hospital->HospDesc) . (trim($hospital->HospLoc) ? ' - ' . trim($hospital->HospLoc) : '');
+    }
+}
 ?>
 <style>
 .easy-autocomplete-container {
@@ -35,6 +45,82 @@ if(!empty($alm->cod_medico)) {
 #detalles-table td {
     overflow: visible !important;
     position: relative;
+}
+
+@media (max-width: 768px) {
+    /* 1. Forzamos a la tabla completa y a sus secciones a comportarse como bloques */
+    #detalles-table,
+    #detalles-table tbody,
+    #detalles-table tr,
+    #detalles-table td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box; /* Evita que los inputs se desborden */
+    }
+
+    /* 2. Ocultamos el encabezado original */
+    #detalles-table thead {
+        display: none !important;
+    }
+
+    /* 3. Cada fila se convierte en una tarjeta (Card) independiente */
+    #detalles-table tbody tr {
+        margin-bottom: 20px;
+        padding: 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* 4. Estilo para cada celda dentro de la tarjeta */
+    #detalles-table tbody td {
+        padding: 8px 0 !important; /* Espacio vertical entre campos */
+        border: none !important;
+        background: transparent !important;
+        text-align: left !important; /* Asegura alineación a la izquierda */
+    }
+
+    /* 5. Generamos las etiquetas superiores usando data-label */
+    #detalles-table tbody td::before {
+        content: attr(data-label);
+        display: block;
+        font-weight: 700;
+        font-size: 11px;
+        color: #206773;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    /* 6. Ajustes de controles para que ocupen todo el ancho disponible */
+    #detalles-table tbody td input[type="text"],
+    #detalles-table tbody td input[type="number"],
+    #detalles-table tbody td textarea,
+    #detalles-table tbody td select {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block;
+    }
+
+    /* Nota: El checkbox de la columna "Alt." no debería medir 100% de ancho */
+    #detalles-table tbody td input[type="checkbox"] {
+        width: auto !important;
+        display: inline-block;
+    }
+
+    #detalles-table tbody td textarea {
+        height: 80px !important;
+    }
+
+    /* 7. Botón de eliminar más fácil de presionar en móviles */
+    #detalles-table tbody td .btn-remove {
+        width: 100%;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+        border-radius: 8px !important;
+        margin-top: 8px;
+    }
 }
 </style>
 <form id="frm-presupuesto" action="?c=presupuesto&a=Guardar" method="post" enctype="multipart/form-data">
@@ -112,14 +198,11 @@ if(!empty($alm->cod_medico)) {
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2 text-center">
-                    <div class="checkbox" style="margin-top: 30px;">
-                        <label><input type="checkbox" name="Licitacion_Nro" <?php echo $alm->Licitacion_Nro == 1 ? 'checked' : ''; ?>> Licitación</label>
-                    </div>
-                </div>
-                <div class="col-md-2 text-center">
-                    <div class="checkbox" style="margin-top: 30px;">
-                        <label><input type="checkbox" name="PresupEnviadoMail" <?php echo $alm->PresupEnviadoMail == 1 ? 'checked' : ''; ?>> Seguimiento</label>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Servicio</label>
+                        <input type="hidden" id="HospCod" name="HospCod" value="<?php echo $alm->HospCod; ?>" />
+                        <input type="text" id="hospital_nombre" class="form-control" placeholder="Buscar servicio..." value="<?php echo htmlspecialchars($hospital_nombre_val); ?>" />
                     </div>
                 </div>
             </div>
@@ -145,16 +228,16 @@ if(!empty($alm->cod_medico)) {
                     <?php if(isset($alm->detalles)): ?>
                         <?php foreach($alm->detalles as $d): ?>                            
                         <tr>
-                            <td><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
-                            <td>
+                            <td data-label="Alt."><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
+                            <td data-label="Producto">
                                 <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
                                 <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
                             </td>
-                            <td><textarea type="text" name="det_detalle[]" class="form-control input-md" style="width: 100%; height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
-                            <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
-                            <td><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
-                            <td class="row-total"><?php echo number_format($d->importe, 2); ?></td>
-                            <td><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
+                            <td data-label="Detalle"><textarea name="det_detalle[]" class="form-control input-md" style="height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
+                            <td data-label="Cant."><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
+                            <td data-label="Importe"><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
+                            <td data-label="Total" class="row-total"><?php echo number_format($d->importe, 2); ?></td>
+                            <td data-label="Acción"><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
                         </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -182,7 +265,7 @@ if(!empty($alm->cod_medico)) {
                             <?php foreach($this->model->buscapagos() as $p): ?>
                                 <option value="<?php echo $p->FfaCod;   ?> " 
                                 <?php 
-                                if($p->FfaCod == 15 && $alm->f_pago == 0) {
+                                if($p->FfaCod == 2 && $alm->f_pago == 0) {
                                     echo 'selected';
                                 }
                                 ?>
@@ -207,37 +290,6 @@ if(!empty($alm->cod_medico)) {
                     <div class="form-group">
                         <label>Validez de Oferta</label>
                         <input type="date" name="fecha_validez" class="form-control" value="<?php echo $alm->fecha_validez ? $alm->fecha_validez : date('Y-m-d', strtotime('+1 month')); ?>" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Fecha Seguimiento</label>
-                        <input type="date" name="PresupFecSeg" class="form-control" value="<?php echo $alm->PresupFecSeg; ?>" />
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Hora Seguimiento</label>
-                        <input type="time" name="PresupHorSeg" class="form-control" value="<?php echo $alm->PresupHorSeg; ?>" />
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Relevancia</label>
-                        <select name="PresupRel" class="form-control">
-                            <option value="1" <?php echo $alm->PresupRel == 1 ? 'selected' : ''; ?>>Baja</option>
-                            <option value="2" <?php echo $alm->PresupRel == 2 ? 'selected' : ''; ?>>Media</option>
-                            <option value="3" <?php echo $alm->PresupRel == 3 ? 'selected' : ''; ?>>Alta</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Expediente Nro</label>
-                        <input type="text" name="Expendiente_nro" class="form-control" value="<?php echo $alm->Expendiente_nro; ?>" />
                     </div>
                 </div>
             </div>
@@ -448,6 +500,26 @@ $(document).ready(function(){
         }
     });
 
+    // Autocomplete for Servicio
+    var selectedHospitalName = $("#hospital_nombre").val();
+    $("#hospital_nombre").easyAutocomplete({
+        url: function(phrase) { return "view/buscahospitales.php?phrase=" + phrase; },
+        getValue: "name",
+        list: {
+            onSelectItemEvent: function() {
+                var data = $("#hospital_nombre").getSelectedItemData();
+                $("#HospCod").val(data.cod_producto).trigger("change");
+                selectedHospitalName = data.name;
+            }
+        }
+    });
+
+    $("#hospital_nombre").on('input', function() {
+        if ($(this).val() !== selectedHospitalName) {
+            $("#HospCod").val('');
+        }
+    });
+
     function initProductSuggest(el) {
         $(el).easyAutocomplete({
             url: function(phrase) { return "view/buscaproductos.php?phrase=" + phrase; },
@@ -482,16 +554,16 @@ $(document).ready(function(){
 
     $("#btn-add-row").click(function(){
         var row = `<tr>
-            <td><input type="checkbox" name="det_alt[]" value="S"></td>
-            <td>
+            <td data-label="Alt."><input type="checkbox" name="det_alt[]" value="S"></td>
+            <td data-label="Producto">
                 <input type="hidden" name="det_cod_producto[]" />
                 <input type="text" class="form-control input-sm product-suggest" />
             </td>
-            <td><textarea name="det_detalle[]" class="form-control input-sm" style="width: 236px; height: 134px;" /></td>
-            <td><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="1" /></td>
-            <td><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="0" /></td>
-            <td class="row-total">0.00</td>
-            <td><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
+            <td data-label="Detalle"><textarea name="det_detalle[]" class="form-control input-sm" style="height: 134px;" /></td>
+            <td data-label="Cant."><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="1" /></td>
+            <td data-label="Importe"><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="0" /></td>
+            <td data-label="Total" class="row-total">0.00</td>
+            <td data-label="Acción"><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
         </tr>`;
         $("#detalles-table tbody").append(row);
         initProductSuggest($("#detalles-table tbody tr:last .product-suggest"));

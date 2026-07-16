@@ -346,7 +346,7 @@ $where= buscar();
                 
                 <!-- VISUALIZAR REMITO PDF (solo para autorizados) -->
                 <?php if($r->EspCod == 3) { ?>
-                <td style="width: 10px;padding:4px"><a title='Visualizar Remito PDF' href="?c=presupuesto&a=RemitoPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/print_remito.png'></a></td>
+                <td style="width: 10px;padding:4px"><a title='Visualizar Remito PDF' href="#" class="btn-remito" data-id="<?php echo $r->cod_presupuesto; ?>"><img src='assets/image/print_remito.png'></a></td>
                 <?php } else { ?>
                 <td style="width: 10px;padding:4px;"><img src='assets/image/print_remito.png' title="Solo para presupuestos autorizados" style="opacity: 0.5;"></td>
                 <?php } ?>
@@ -816,6 +816,15 @@ function buscar()
                   </div>
                 </div>
               </div>
+              <div class="row" style="margin-top: 15px;">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label style="font-weight: 600; color: #475569;">Servicio</label>
+                    <input type="hidden" name="HospCod" id="aut_inp_hospcod" />
+                    <input type="text" id="aut_inp_hospital" class="form-control" placeholder="Buscar servicio..." style="border-radius: 6px; border: 1px solid #cbd5e1;" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -922,6 +931,40 @@ function buscar()
   </div>
 </div>
 
+<!-- Modal Remito -->
+<div class="modal fade" id="modalRemito" tabindex="-1" role="dialog" aria-labelledby="modalRemitoLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #206773 0%, #174b54 100%); color: white; padding: 20px;">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="modalRemitoLabel" style="font-weight: bold; display: flex; align-items: center; gap: 10px;">
+          <i class="fa-solid fa-file-pen"></i> Generar Remito
+        </h4>
+      </div>
+      <div class="modal-body" style="padding: 25px; background-color: #f8fafc;">
+        <form id="frm-remito">
+          <input type="hidden" name="cod_presupuesto" id="rem_cod_presupuesto" />
+          <div class="form-group">
+            <label style="font-weight: 600; color: #475569;">Servicio</label>
+            <input type="hidden" name="HospCod" id="rem_hospcod" />
+            <input type="text" id="rem_hospital" class="form-control" placeholder="Buscar servicio..." style="border-radius: 6px; border: 1px solid #cbd5e1;" />
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 600; color: #475569;">Fecha del Remito</label>
+            <input type="date" name="fecha_remito" id="rem_fecha" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1;" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="background-color: #f1f5f9; padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius: 6px; font-weight: bold; padding: 8px 16px;">Cancelar</button>
+        <button type="button" id="btn-generar-remito" class="btn btn-primary" style="border-radius: 6px; font-weight: bold; padding: 8px 20px; background-color: #206773; border: none; color: white;">
+          <i class="fa-solid fa-file-pdf"></i> Generar Remito
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
     // 1. Initialize easyAutocomplete on the modal's doctor field
@@ -933,6 +976,26 @@ $(document).ready(function() {
                 var value = $("#aut_inp_medico_nombre").getSelectedItemData().cod_producto;
                 $("#aut_inp_cod_medico").val(value).trigger("change");
             }
+        }
+    });
+
+    // 1b. Initialize easyAutocomplete on the modal's hospital field
+    var selectedAutorizarHospitalName = '';
+    $("#aut_inp_hospital").easyAutocomplete({
+        url: function(phrase) { return "view/buscahospitales.php?phrase=" + phrase; },
+        getValue: "name",
+        list: {
+            onSelectItemEvent: function() {
+                var data = $("#aut_inp_hospital").getSelectedItemData();
+                $("#aut_inp_hospcod").val(data.cod_producto).trigger("change");
+                selectedAutorizarHospitalName = data.name;
+            }
+        }
+    });
+
+    $("#aut_inp_hospital").on('input', function() {
+        if ($(this).val() !== selectedAutorizarHospitalName) {
+            $("#aut_inp_hospcod").val('');
         }
     });
 
@@ -960,6 +1023,22 @@ $(document).ready(function() {
                     $("#aut_inp_paciente").val(p.PresupuestoPaciente);
                     $("#aut_inp_cod_medico").val(p.cod_medico);
                     $("#aut_inp_medico_nombre").val(p.medico_nombre);
+                    
+                    // Fill hospital / servicio
+                    var hospitalName = '';
+                    if (p.hospital_nombre) {
+                        hospitalName = p.hospital_nombre;
+                        if (p.hospital_localidad) {
+                            hospitalName += ' - ' + p.hospital_localidad;
+                        }
+                    }
+                    $("#aut_inp_hospcod").val(p.HospCod || '');
+                    $("#aut_inp_hospital").val(hospitalName);
+                    if (p.HospCod) {
+                        selectedAutorizarHospitalName = hospitalName;
+                    } else {
+                        selectedAutorizarHospitalName = '';
+                    }
                     
                     // Fill coordinator select
                     var coordSel = $("#aut_sel_coordinador");
@@ -1165,6 +1244,91 @@ $(document).ready(function() {
                 submitBtn.prop('disabled', false).html(originalHtml);
             }
         });
+    });
+
+    // === REMITO MODAL ===
+    var selectedRemitoHospital = '';
+    $("#rem_hospital").easyAutocomplete({
+        url: function(phrase) { return "view/buscahospitales.php?phrase=" + phrase; },
+        getValue: "name",
+        list: {
+            onSelectItemEvent: function() {
+                var data = $("#rem_hospital").getSelectedItemData();
+                $("#rem_hospcod").val(data.cod_producto).trigger("change");
+                selectedRemitoHospital = data.name;
+            }
+        }
+    });
+
+    $("#rem_hospital").on('input', function() {
+        if ($(this).val() !== selectedRemitoHospital) {
+            $("#rem_hospcod").val('');
+        }
+    });
+
+    $(document).on('click', '.btn-remito', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+
+        $.ajax({
+            url: '?c=presupuesto&a=ObtenerDetallesJson',
+            type: 'GET',
+            data: { id: id },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success && res.data) {
+                    var p = res.data;
+                    $("#rem_cod_presupuesto").val(p.cod_presupuesto);
+
+                    // Pre-fill hospital if already set
+                    var hospitalName = '';
+                    if (p.hospital_nombre) {
+                        hospitalName = p.hospital_nombre;
+                        if (p.hospital_localidad) {
+                            hospitalName += ' - ' + p.hospital_localidad;
+                        }
+                    }
+                    $("#rem_hospcod").val(p.HospCod || '');
+                    $("#rem_hospital").val(hospitalName);
+                    selectedRemitoHospital = hospitalName;
+
+                    // Default date to today
+                    if (!$("#rem_fecha").val()) {
+                        var today = new Date();
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var yyyy = today.getFullYear();
+                        $("#rem_fecha").val(yyyy + '-' + mm + '-' + dd);
+                    }
+
+                    $("#modalRemito").modal('show');
+                } else {
+                    alert('Error al cargar datos del presupuesto.');
+                }
+            },
+            error: function() {
+                alert('Error de comunicación con el servidor.');
+            }
+        });
+    });
+
+    $("#btn-generar-remito").click(function() {
+        var id = $("#rem_cod_presupuesto").val();
+        var hospCod = $("#rem_hospcod").val();
+        var fecha = $("#rem_fecha").val();
+        if (!fecha) {
+            alert('Debe seleccionar una fecha para el remito.');
+            return;
+        }
+        var url = '?c=presupuesto&a=RemitoPDF&id=' + id;
+        if (hospCod) {
+            url += '&hospCod=' + hospCod;
+        }
+        if (fecha) {
+            url += '&fecha_remito=' + fecha;
+        }
+        window.open(url, '_blank');
+        $("#modalRemito").modal('hide');
     });
 });
 </script>

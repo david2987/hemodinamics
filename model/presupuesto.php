@@ -14,6 +14,7 @@ class presupuesto
     public $PresupuestoPaciente;
     public $PresupDisAlt;
     public $CprCod;
+    public $HospCod;
     public $PresupVndCom;
     public $PresupFecSeg;
     public $PresupHorSeg;
@@ -443,16 +444,11 @@ class presupuesto
                             fecha_validez = ?, 
                             f_pago = ?, 
                             plazo = ?, 
-                            Licitacion_Nro = ?, 
                             PresupuestoPaciente = ?, 
                             PresupDisAlt = ?, 
                             CprCod = ?, 
+                            HospCod = ?, 
                             PresupVndCom = ?, 
-                            PresupFecSeg = ?, 
-                            PresupHorSeg = ?, 
-                            PresupRel = ?, 
-                            Expendiente_nro = ?,
-                            PresupEnviadoMail = ?,
                             PresupProductos = ?
                         WHERE cod_presupuesto = ?";
 
@@ -464,16 +460,11 @@ class presupuesto
                             $data->fecha_validez, 
                             $data->f_pago, 
                             $data->plazo, 
-                            $data->Licitacion_Nro, 
                             $data->PresupuestoPaciente, 
                             $data->PresupDisAlt, 
                             $data->CprCod, 
+                            $data->HospCod, 
                             $data->PresupVndCom, 
-                            $data->PresupFecSeg, 
-                            $data->PresupHorSeg, 
-                            $data->PresupRel, 
-                            $data->Expendiente_nro,
-                            $data->PresupEnviadoMail,
                             $prod_codes,
                             $data->cod_presupuesto
                         )
@@ -484,8 +475,8 @@ class presupuesto
             {
                 $usrCre = isset($_SESSION['user']['UsrCod']) ? $_SESSION['user']['UsrCod'] : '';
                 
-                $sql = "INSERT INTO presupuestos (cod_presupuesto, cod_cliente, cod_medico, fecha, fecha_validez, f_pago, plazo, Licitacion_Nro, PresupuestoPaciente, PresupDisAlt, CprCod, PresupVndCom, PresupFecSeg, PresupHorSeg, PresupRel, Expendiente_nro, PresupEnviadoMail, EspCod, SueCod, PresupUsrCre, PresupProductos) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)";
+                $sql = "INSERT INTO presupuestos (cod_presupuesto, cod_cliente, cod_medico, fecha, fecha_validez, f_pago, plazo, PresupuestoPaciente, PresupDisAlt, CprCod, HospCod, PresupVndCom, EspCod, SueCod, PresupUsrCre, PresupProductos) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)";
 
                 $this->pdo->prepare($sql)
                      ->execute(
@@ -497,16 +488,11 @@ class presupuesto
                             $data->fecha_validez, 
                             $data->f_pago, 
                             $data->plazo, 
-                            $data->Licitacion_Nro, 
                             $data->PresupuestoPaciente, 
                             $data->PresupDisAlt, 
                             $data->CprCod, 
+                            $data->HospCod, 
                             $data->PresupVndCom, 
-                            $data->PresupFecSeg, 
-                            $data->PresupHorSeg, 
-                            $data->PresupRel, 
-                            $data->Expendiente_nro,
-                            $data->PresupEnviadoMail,
                             $usrCre,
                             $prod_codes
                         )
@@ -546,10 +532,11 @@ class presupuesto
     {
         try 
         {
-            $sql = "SELECT p.cod_presupuesto, p.PresupuestoPaciente, p.cod_medico, m.mediconombre AS medico_nombre, c.nombre AS cliente_nombre 
+            $sql = "SELECT p.cod_presupuesto, p.PresupuestoPaciente, p.cod_medico, p.HospCod, m.mediconombre AS medico_nombre, c.nombre AS cliente_nombre, h.HospDesc AS hospital_nombre, h.HospLoc AS hospital_localidad
                     FROM presupuestos p 
                     LEFT JOIN clientes c ON p.cod_cliente = c.cod_cliente 
                     LEFT JOIN medicos m ON p.cod_medico = m.cod_medico 
+                    LEFT JOIN hospitales h ON p.HospCod = h.HospCod
                     WHERE p.cod_presupuesto = ?";
             $stm = $this->pdo->prepare($sql);
             $stm->execute(array($id));
@@ -593,7 +580,7 @@ class presupuesto
         }
     }
 
-    public function AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $items_a_eliminar)
+    public function AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $hospCod = null, $items_a_eliminar = [])
     {
         try
         {
@@ -608,7 +595,8 @@ class presupuesto
                         PresupVndCom = ?, 
                         PresupFecAut = CURRENT_DATE(),
                         PresupuestoPaciente = ?,
-                        cod_medico = ?
+                        cod_medico = ?,
+                        HospCod = ?
                     WHERE cod_presupuesto = ?";
             $stm = $this->pdo->prepare($sql);
             $stm->execute(array(
@@ -616,6 +604,7 @@ class presupuesto
                 $comentario,
                 $paciente,
                 $cod_medico,
+                $hospCod,
                 $id
             ));
 
