@@ -593,24 +593,24 @@ class PresupuestoController{
             // $pdf->SetXY(165, 10.5);
             // $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
             
-            $pdf->SetXY(152, 29.5);
-            $pdf->Cell(50, 5, date('d   m   Y', strtotime($fecha_remito)), 0, 0, 'L');
+            $pdf->SetXY(159, 30);
+            $pdf->Cell(50, 5, date('d    m    Y', strtotime($fecha_remito)), 0, 0, 'L');
             
             // Switch to regular font for client data values
             $pdf->SetFont('Arial', '', 9);
             
             // Middle Left: Cliente
-            $pdf->SetXY(30, 62);
+            $pdf->SetXY(40, 61);
             $pdf->Cell(80, 5, utf8_decode($cliente_nombre), 0, 0, 'L');
-            $pdf->SetXY(30, 70);
+            $pdf->SetXY(40, 68);
             $pdf->Cell(80, 5, utf8_decode($domicilio), 0, 0, 'L');
-            $pdf->SetXY(47, 84);
+            $pdf->SetXY(60, 84);
             $pdf->Cell(80, 5, utf8_decode($fpago_name), 0, 0, 'L');
             
             // Middle Right: Localidad & CUIT
-            $pdf->SetXY(160, 70);
+            $pdf->SetXY(160, 68);
             $pdf->Cell(50, 5, utf8_decode($localidad), 0, 0, 'L');
-            $pdf->SetXY(160, 75);
+            $pdf->SetXY(160, 74);
             $pdf->Cell(50, 5, utf8_decode($cuit), 0, 0, 'L');
             
             // Patient / Doctor section - regular font
@@ -635,13 +635,13 @@ class PresupuestoController{
             $pdf->SetFont('Arial', '', 9);
 
             // Bottom Left: Validez, Forma Pago, Plazo
-            $pdf->SetXY(45, 260);
+            $pdf->SetXY(57, 250);
             $pdf->Cell(60, 5,"PACIENTE: " . utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
             
-            $pdf->SetXY(45, 265);
+            $pdf->SetXY(57, 255);
             $pdf->Cell(60, 5, "MEDICO: " . utf8_decode($medico_nombre), 0, 0, 'L');
             
-            $pdf->SetXY(45, 270);
+            $pdf->SetXY(57, 260);
             $pdf->Cell(60, 5, "SERVICIO: " . utf8_decode($hosp_name), 0, 0, 'L');
             
             // Bottom Right: Total
@@ -679,10 +679,10 @@ class PresupuestoController{
                     $pdf->SetFont('Arial', '', 9);
                 }
 
-                $pdf->SetXY(4, $y);
+                $pdf->SetXY(19, $y);
                 $pdf->Cell(20, 5, $d->item, 0, 0, 'C'); 
                 
-                $pdf->SetXY(25, $y);
+                $pdf->SetXY(36, $y);
                 $pdf->Cell(15, 5, $d->cantidad, 0, 0, 'C'); 
                                 
                 // $pdf->SetXY(160, $y);
@@ -691,7 +691,7 @@ class PresupuestoController{
                 // $pdf->SetXY(181, $y);
                 // $pdf->Cell(20, 5, '$ ' . number_format($d->importe, 2), 0, 0, 'R'); 
 
-                $pdf->SetXY(43, $y);
+                $pdf->SetXY(57, $y);
                 $pdf->MultiCell(95, 5, utf8_decode($d->detalle_ag), 0, 'L');
                 //$pdf->Cell(95, 5, utf8_decode($d->detalle_ag), 0, 0, 'L'); 
                 $y = $pdf->GetY() + 2;

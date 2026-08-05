@@ -49,6 +49,7 @@ try {
         <link rel="stylesheet" href="easyautocomplete/easy-autocomplete.themes.css">
         <link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <?php  } ?>
     <style type="text/css">
@@ -215,7 +216,7 @@ try {
             border-radius: 16px !important;
             border: 1px solid #e2e8f0 !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-            padding: 24px !important;
+            /* padding: 24px !important; */
         }
 
         h1,
@@ -404,6 +405,63 @@ try {
             background-color: #f1f5f9 !important;
             border-color: #94a3b8 !important;
             transform: translateY(-1px);
+        }
+
+        /* Hamburger & Mobile Sidebar */
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #206773;
+            cursor: pointer;
+            padding: 4px 8px;
+            margin-right: 10px;
+            line-height: 1;
+        }
+        .sidebar-toggle:focus {
+            outline: none;
+        }
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+        #sidebar-overlay.open {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            #sidebar {
+                position: fixed !important;
+                left: -280px !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                z-index: 999 !important;
+                transition: left 0.3s ease !important;
+                width: 260px !important;
+                height: 100vh !important;
+                flex-shrink: 0 !important;
+            }
+            #sidebar.open {
+                left: 0 !important;
+            }
+            #page-content-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            #header-bar h3 {
+                font-size: 15px;
+            }
         }
     </style>
 
@@ -682,6 +740,23 @@ try {
             $('#cod_cliente').easyAutocomplete(options4);
             $('#Hospcod').easyAutocomplete(options5);
 
+            // Mobile sidebar toggle
+            $('#sidebarToggle').click(function(e) {
+                e.stopPropagation();
+                $('#sidebar').toggleClass('open');
+                $('#sidebar-overlay').toggleClass('open');
+            });
+            $('#sidebar-overlay').click(function() {
+                $('#sidebar').removeClass('open');
+                $('#sidebar-overlay').removeClass('open');
+            });
+            $('#sidebar a').click(function() {
+                if ($(window).width() <= 768) {
+                    $('#sidebar').removeClass('open');
+                    $('#sidebar-overlay').removeClass('open');
+                }
+            });
+
             Math.rand = function(min, max) {
                 return Math.floor(Math.random() * (max - min + 1)) + min;
             };
@@ -753,6 +828,7 @@ try {
 <body style="font-size: 14.0pt;font-weight: normal;font-style: normal;font-family:Arial">
 
     <div id="wrapper" style="display: flex; min-height: 100vh;">
+        <div id="sidebar-overlay"></div>
         <?php
         // Get active controller
         $activeController = isset($_REQUEST['c']) ? strtolower($_REQUEST['c']) : 'presupuesto';
@@ -813,7 +889,12 @@ try {
         <!-- Page Content -->
         <div id="page-content-wrapper" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
             <div id="header-bar" style="background-color: #f8f8f8; padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; color: #206773; font-weight: bold;">Sistema de Gestión Hemodinamics</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h3 style="margin: 0; color: #206773; font-weight: bold;">Sistema de Gestión Hemodinamics</h3>
+                </div>
                 <div>
                     <span style="font-size: 14px; color: #475569; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-regular fa-circle-user" style="color: #206773; font-size: 18px;"></i>

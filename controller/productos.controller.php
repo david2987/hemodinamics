@@ -39,8 +39,8 @@ class ProductosController {
         $alm->producto_titulo = $_REQUEST['producto_titulo'];
         $alm->producto_precio = $_REQUEST['producto_precio'];
         $alm->productoPrecDis = $_REQUEST['productoPrecDis'];
-        $alm->CptId = $_REQUEST['CptId'];
-        $alm->producto_fechaaviso = $_REQUEST['producto_fechaaviso'];
+        $alm->CptId = !empty($_REQUEST['CptId']) ? (int)$_REQUEST['CptId'] : null;
+        $alm->producto_fechaaviso = !empty($_REQUEST['producto_fechaaviso']) ? $_REQUEST['producto_fechaaviso'] : null;
         $alm->producto_aviso = $_REQUEST['producto_aviso'];
         $this->model->Guardar($alm);
         header('Location: index.php?c=productos');

@@ -47,80 +47,66 @@ if(!empty($alm->HospCod)) {
     position: relative;
 }
 
+.detalles-mode-wrapper .mode-table { display: block; }
+.detalles-mode-wrapper .mode-cards { display: none; }
+
 @media (max-width: 768px) {
-    /* 1. Forzamos a la tabla completa y a sus secciones a comportarse como bloques */
-    #detalles-table,
-    #detalles-table tbody,
-    #detalles-table tr,
-    #detalles-table td {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box; /* Evita que los inputs se desborden */
-    }
+    .detalles-mode-wrapper .mode-table { display: none; }
+    .detalles-mode-wrapper .mode-cards { display: block; }
+}
 
-    /* 2. Ocultamos el encabezado original */
-    #detalles-table thead {
-        display: none !important;
-    }
-
-    /* 3. Cada fila se convierte en una tarjeta (Card) independiente */
-    #detalles-table tbody tr {
-        margin-bottom: 20px;
-        padding: 16px;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    /* 4. Estilo para cada celda dentro de la tarjeta */
-    #detalles-table tbody td {
-        padding: 8px 0 !important; /* Espacio vertical entre campos */
-        border: none !important;
-        background: transparent !important;
-        text-align: left !important; /* Asegura alineación a la izquierda */
-    }
-
-    /* 5. Generamos las etiquetas superiores usando data-label */
-    #detalles-table tbody td::before {
-        content: attr(data-label);
-        display: block;
-        font-weight: 700;
-        font-size: 11px;
-        color: #206773;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-    }
-
-    /* 6. Ajustes de controles para que ocupen todo el ancho disponible */
-    #detalles-table tbody td input[type="text"],
-    #detalles-table tbody td input[type="number"],
-    #detalles-table tbody td textarea,
-    #detalles-table tbody td select {
-        width: 100% !important;
-        max-width: 100% !important;
-        display: block;
-    }
-
-    /* Nota: El checkbox de la columna "Alt." no debería medir 100% de ancho */
-    #detalles-table tbody td input[type="checkbox"] {
-        width: auto !important;
-        display: inline-block;
-    }
-
-    #detalles-table tbody td textarea {
-        height: 80px !important;
-    }
-
-    /* 7. Botón de eliminar más fácil de presionar en móviles */
-    #detalles-table tbody td .btn-remove {
-        width: 100%;
-        padding: 12px 16px !important;
-        font-size: 16px !important;
-        border-radius: 8px !important;
-        margin-top: 8px;
-    }
+/* Cards layout */
+.detalles-card {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.detalles-card .dc-field {
+    margin-bottom: 10px;
+}
+.detalles-card .dc-label {
+    display: block;
+    font-weight: 700;
+    font-size: 11px;
+    color: #206773;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.detalles-card .dc-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+.detalles-card .dc-row-3 .dc-field {
+    margin-bottom: 0;
+}
+.detalles-card .dc-checkbox label {
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.detalles-card .dc-checkbox input {
+    width: 18px;
+    height: 18px;
+}
+.detalles-card .btn-remove-card {
+    width: 100%;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+    margin-top: 4px;
+}
+#btn-add-card {
+    width: 100%;
+    padding: 12px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
 }
 </style>
 <form id="frm-presupuesto" action="?c=presupuesto&a=Guardar" method="post" enctype="multipart/form-data">
@@ -212,44 +198,49 @@ if(!empty($alm->HospCod)) {
     <div class="panel panel-info">
         <div class="panel-heading">Detalle del Presupuesto</div>
         <div class="panel-body">
-            <table id="detalles-table" class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">Alt.</th>
-                        <th>Producto</th>
-                        <th>Detalle</th>
-                        <th style="width: 80px;">Cant.</th>
-                        <th style="width: 120px;">Importe</th>
-                        <th style="width: 120px;">Total</th>
-                        <th style="width: 50px;"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if(isset($alm->detalles)): ?>
-                        <?php foreach($alm->detalles as $d): ?>                            
-                        <tr>
-                            <td data-label="Alt."><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
-                            <td data-label="Producto">
-                                <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
-                                <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
-                            </td>
-                            <td data-label="Detalle"><textarea name="det_detalle[]" class="form-control input-md" style="height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
-                            <td data-label="Cant."><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
-                            <td data-label="Importe"><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
-                            <td data-label="Total" class="row-total"><?php echo number_format($d->importe, 2); ?></td>
-                            <td data-label="Acción"><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="7">
-                            <button type="button" id="btn-add-row" class="btn btn-primary btn-sm">Agregar Fila</button>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="detalles-mode-wrapper">
+                <div class="mode-table">
+                    <table id="detalles-table" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Alt.</th>
+                                <th>Producto</th>
+                                <th>Detalle</th>
+                                <th style="width: 80px;">Cant.</th>
+                                <th style="width: 120px;">Importe</th>
+                                <th style="width: 120px;">Total</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(isset($alm->detalles)): ?>
+                                <?php foreach($alm->detalles as $d): ?>                            
+                                <tr>
+                                    <td data-label="Alt."><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
+                                    <td data-label="Producto">
+                                        <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
+                                        <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
+                                    </td>
+                                    <td data-label="Detalle"><textarea name="det_detalle[]" class="form-control input-md" style="height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
+                                    <td data-label="Cant."><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>
+                                    <td data-label="Importe"><input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="<?php echo $d->p_unitario; ?>" /></td>
+                                    <td data-label="Total" class="row-total"><?php echo number_format($d->importe, 2); ?></td>
+                                    <td data-label="Acción"><button type="button" class="btn btn-danger btn-xs btn-remove"><i class="glyphicon glyphicon-remove"></i></button></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="7">
+                                    <button type="button" id="btn-add-row" class="btn btn-primary btn-sm">Agregar Fila</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="mode-cards" id="detalles-cards-container"></div>
+            </div>
         </div>
     </div>
 
@@ -527,28 +518,105 @@ $(document).ready(function(){
             list: {
                 onSelectItemEvent: function() {
                     var data = $(el).getSelectedItemData();
-                    var row = $(el).closest('tr');
-                    row.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
-                    row.find('textarea[name="det_detalle[]"]').val(data.detalle);
+                    var container = $(el).closest('tr, .detalles-card');
+                    container.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
+                    container.find('textarea[name="det_detalle[]"]').val(data.detalle);
                     $(el).data('selected', data.name);
                 }
             }
         });
     }
 
-    $(".product-suggest").each(function(){
-        var row = $(this).closest('tr');
-        var currentVal = row.find('input[name="det_cod_producto[]"]').val();
-        if (currentVal) {
-            $(this).data('selected', $(this).val());
+    function initAllSuggests(scope) {
+        $(scope || document).find('.product-suggest').each(function(){
+            var container = $(this).closest('tr, .detalles-card');
+            var currentVal = container.find('input[name="det_cod_producto[]"]').val();
+            if (currentVal) {
+                $(this).data('selected', $(this).val());
+            }
+            initProductSuggest(this);
+        });
+    }
+
+    function rebuildCards() {
+        var $container = $("#detalles-cards-container");
+        $container.empty();
+        $("#detalles-table tbody tr").each(function(){
+            var $tr = $(this);
+            var codProducto = $tr.find('input[name="det_cod_producto[]"]').val() || '';
+            var productName = $tr.find('.product-suggest').val() || '';
+            var detalle = $tr.find('textarea[name="det_detalle[]"]').val() || '';
+            var cantidad = $tr.find('.qty').val() || '1';
+            var importe = $tr.find('.price').val() || '0';
+            var total = $tr.find('.row-total').text() || '0.00';
+            var altChecked = $tr.find('input[name="det_alt[]"]').is(':checked') ? 'checked' : '';
+
+            var card = [
+                '<div class="detalles-card">',
+                    '<input type="hidden" name="det_cod_producto[]" value="' + $('<span>').text(codProducto).html() + '" />',
+                    '<div class="dc-field">',
+                        '<span class="dc-label">Producto</span>',
+                        '<input type="text" class="form-control input-sm product-suggest" value="' + $('<span>').text(productName).html() + '" />',
+                    '</div>',
+                    '<div class="dc-field">',
+                        '<span class="dc-label">Detalle</span>',
+                        '<textarea name="det_detalle[]" class="form-control input-md" style="height:80px;">' + $('<span>').text(detalle).html() + '</textarea>',
+                    '</div>',
+                    '<div class="dc-row-3">',
+                        '<div class="dc-field">',
+                            '<span class="dc-label">Cant.</span>',
+                            '<input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="' + cantidad + '" />',
+                        '</div>',
+                        '<div class="dc-field">',
+                            '<span class="dc-label">Importe</span>',
+                            '<input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="' + importe + '" />',
+                        '</div>',
+                        '<div class="dc-field">',
+                            '<span class="dc-label">Total</span>',
+                            '<span class="form-control-static row-total">' + total + '</span>',
+                        '</div>',
+                    '</div>',
+                    '<div class="dc-field dc-checkbox">',
+                        '<label><input type="checkbox" name="det_alt[]" value="S" ' + altChecked + '> Alternativa</label>',
+                    '</div>',
+                    '<button type="button" class="btn btn-danger btn-sm btn-remove-card"><i class="glyphicon glyphicon-remove"></i> Eliminar</button>',
+                '</div>'
+            ].join('\n');
+            $container.append(card);
+        });
+        // Add the "add row" button at the bottom of cards
+        $container.append('<button type="button" id="btn-add-card" class="btn btn-primary btn-sm">+ Agregar Fila</button>');
+        // Initialize suggests on the new cards
+        initAllSuggests($container);
+    }
+
+    function syncView() {
+        var $wrapper = $(".detalles-mode-wrapper");
+        if ($(window).width() <= 768) {
+            if (!$wrapper.hasClass('mode-cards-active')) {
+                $wrapper.addClass('mode-cards-active');
+                rebuildCards();
+            }
+        } else {
+            $wrapper.removeClass('mode-cards-active');
         }
-        initProductSuggest(this);
+    }
+
+    // Initialize
+    initAllSuggests();
+
+    // Sync on load and resize
+    syncView();
+    var resizeTimer;
+    $(window).resize(function(){
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(syncView, 200);
     });
 
     $(document).on('input', '.product-suggest', function() {
-        var row = $(this).closest('tr');
+        var container = $(this).closest('tr, .detalles-card');
         if ($(this).val() !== $(this).data('selected')) {
-            row.find('input[name="det_cod_producto[]"]').val('');
+            container.find('input[name="det_cod_producto[]"]').val('');
         }
     });
 
@@ -567,17 +635,36 @@ $(document).ready(function(){
         </tr>`;
         $("#detalles-table tbody").append(row);
         initProductSuggest($("#detalles-table tbody tr:last .product-suggest"));
+        if ($(".detalles-mode-wrapper").hasClass('mode-cards-active')) {
+            rebuildCards();
+        }
     });
 
     $(document).on('click', '.btn-remove', function(){
+        var idx = $(this).closest('tr').index();
         $(this).closest('tr').remove();
+        if ($(".detalles-mode-wrapper").hasClass('mode-cards-active')) {
+            rebuildCards();
+        }
+    });
+
+    $(document).on('click', '.btn-remove-card', function(){
+        var idx = $(this).closest('.detalles-card').index();
+        $(this).closest('.detalles-card').remove();
+        $("#detalles-table tbody tr").eq(idx).remove();
+        // Rebuild to keep indexes aligned
+        rebuildCards();
+    });
+
+    $(document).on('click', '#btn-add-card', function(){
+        $("#btn-add-row").click();
     });
 
     $(document).on('input', '.qty, .price', function(){
-        var row = $(this).closest('tr');
-        var qty = parseFloat(row.find('.qty').val()) || 0;
-        var price = parseFloat(row.find('.price').val()) || 0;
-        row.find('.row-total').text((qty * price).toFixed(2));
+        var container = $(this).closest('tr, .detalles-card');
+        var qty = parseFloat(container.find('.qty').val()) || 0;
+        var price = parseFloat(container.find('.price').val()) || 0;
+        container.find('.row-total').text((qty * price).toFixed(2));
     });
 });
 </script>
