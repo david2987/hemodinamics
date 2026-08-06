@@ -108,6 +108,9 @@ if(!empty($alm->HospCod)) {
     font-size: 16px !important;
     border-radius: 10px !important;
 }
+textarea {
+  resize: none;
+}
 </style>
 <form id="frm-presupuesto" action="?c=presupuesto&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="cod_presupuesto" value="<?php echo $alm->cod_presupuesto; ?>" />
@@ -331,7 +334,24 @@ $(document).ready(function(){
     var selectedClienteName = $("#cliente_nombre").val();
     var selectedMedicoName = $("#medico_nombre").val();
 
+    function syncCardsToTable() {
+        var cardsActive = $(".detalles-mode-wrapper").hasClass('mode-cards-active');
+        if (!cardsActive) return;
+        $("#detalles-cards-container .detalles-card").each(function(idx){
+            var $card = $(this);
+            var $tr = $("#detalles-table tbody tr").eq(idx);
+            if ($tr.length === 0) return;
+            $tr.find('textarea[name="det_detalle[]"]').val($card.find('.dc-detalle').val());
+            $tr.find('.qty').val($card.find('.dc-qty').val());
+            $tr.find('.price').val($card.find('.dc-price').val());
+            $tr.find('input[name="det_alt[]"]').prop('checked', $card.find('.dc-alt').is(':checked'));
+            $tr.find('.row-total').text($card.find('.row-total').text());
+            $tr.find('.product-suggest').val($card.find('.product-suggest').val());
+        });
+    }
+
     function validarFormulario() {
+        syncCardsToTable();
         // Validate Cliente
         var codCliente = $("#cod_cliente").val();
         var clienteNombre = $.trim($("#cliente_nombre").val());
@@ -519,8 +539,20 @@ $(document).ready(function(){
                 onSelectItemEvent: function() {
                     var data = $(el).getSelectedItemData();
                     var container = $(el).closest('tr, .detalles-card');
-                    container.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
-                    container.find('textarea[name="det_detalle[]"]').val(data.detalle);
+if ($(el).closest('.detalles-card').length) {
+                        // Card: write into the mapped table row (single source of truth)
+                        var idx = $("#detalles-cards-container .detalles-card").index($(el).closest('.detalles-card'));
+                        var $tr = $("#detalles-table tbody tr").eq(idx);
+                        if ($tr.length) {
+                            $tr.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
+                            $tr.find('textarea[name="det_detalle[]"]').val(data.detalle);
+                        }
+                        // Show the detail on the card itself (visible on mobile)
+                        $(el).closest('.detalles-card').find('.dc-detalle').val(data.detalle);
+                    } else {
+                        container.find('input[name="det_cod_producto[]"]').val(data.cod_producto);
+                        container.find('textarea[name="det_detalle[]"]').val(data.detalle);
+                    }
                     $(el).data('selected', data.name);
                 }
             }
@@ -538,51 +570,54 @@ $(document).ready(function(){
         });
     }
 
+    function buildCardForRow($tr) {
+        var idx = $tr.index('#detalles-table tbody tr');
+        var codProducto = $tr.find('input[name="det_cod_producto[]"]').val() || '';
+        var productName = $tr.find('.product-suggest').val() || '';
+        var detalle = $tr.find('textarea[name="det_detalle[]"]').val() || '';
+        var cantidad = $tr.find('.qty').val() || '1';
+        var importe = $tr.find('.price').val() || '0';
+        var total = $tr.find('.row-total').text() || '0.00';
+        var altChecked = $tr.find('input[name="det_alt[]"]').is(':checked') ? 'checked' : '';
+
+        var card = [
+            '<div class="detalles-card" data-row="' + idx + '">',
+                '<div class="dc-field">',
+                    '<span class="dc-label">Producto</span>',
+                    '<input type="text" class="form-control input-sm product-suggest" value="' + $('<span>').text(productName).html() + '" ' + (codProducto ? 'data-selected="' + $('<span>').text(productName).html() + '"' : '') + ' />',
+                '</div>',
+                '<div class="dc-field">',
+                    '<span class="dc-label">Detalle</span>',
+                    '<textarea class="form-control input-md dc-detalle" style="height:80px;">' + $('<span>').text(detalle).html() + '</textarea>',
+                '</div>',
+                '<div class="dc-row-3">',
+                    '<div class="dc-field">',
+                        '<span class="dc-label">Cant.</span>',
+                        '<input type="number" class="form-control input-sm dc-qty" value="' + cantidad + '" />',
+                    '</div>',
+                    '<div class="dc-field">',
+                        '<span class="dc-label">Importe</span>',
+                        '<input type="number" step="0.01" class="form-control input-sm dc-price" value="' + importe + '" />',
+                    '</div>',
+                    '<div class="dc-field">',
+                        '<span class="dc-label">Total</span>',
+                        '<span class="form-control-static row-total">' + total + '</span>',
+                    '</div>',
+                '</div>',
+                '<div class="dc-field dc-checkbox">',
+                    '<label><input type="checkbox" class="dc-alt" value="S" ' + altChecked + '> Alternativa</label>',
+                '</div>',
+                '<button type="button" class="btn btn-danger btn-sm btn-remove-card"><i class="glyphicon glyphicon-remove"></i> Eliminar</button>',
+            '</div>'
+        ].join('\n');
+        return card;
+    }
+
     function rebuildCards() {
         var $container = $("#detalles-cards-container");
         $container.empty();
         $("#detalles-table tbody tr").each(function(){
-            var $tr = $(this);
-            var codProducto = $tr.find('input[name="det_cod_producto[]"]').val() || '';
-            var productName = $tr.find('.product-suggest').val() || '';
-            var detalle = $tr.find('textarea[name="det_detalle[]"]').val() || '';
-            var cantidad = $tr.find('.qty').val() || '1';
-            var importe = $tr.find('.price').val() || '0';
-            var total = $tr.find('.row-total').text() || '0.00';
-            var altChecked = $tr.find('input[name="det_alt[]"]').is(':checked') ? 'checked' : '';
-
-            var card = [
-                '<div class="detalles-card">',
-                    '<input type="hidden" name="det_cod_producto[]" value="' + $('<span>').text(codProducto).html() + '" />',
-                    '<div class="dc-field">',
-                        '<span class="dc-label">Producto</span>',
-                        '<input type="text" class="form-control input-sm product-suggest" value="' + $('<span>').text(productName).html() + '" />',
-                    '</div>',
-                    '<div class="dc-field">',
-                        '<span class="dc-label">Detalle</span>',
-                        '<textarea name="det_detalle[]" class="form-control input-md" style="height:80px;">' + $('<span>').text(detalle).html() + '</textarea>',
-                    '</div>',
-                    '<div class="dc-row-3">',
-                        '<div class="dc-field">',
-                            '<span class="dc-label">Cant.</span>',
-                            '<input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="' + cantidad + '" />',
-                        '</div>',
-                        '<div class="dc-field">',
-                            '<span class="dc-label">Importe</span>',
-                            '<input type="number" step="0.01" name="det_importe[]" class="form-control input-sm price" value="' + importe + '" />',
-                        '</div>',
-                        '<div class="dc-field">',
-                            '<span class="dc-label">Total</span>',
-                            '<span class="form-control-static row-total">' + total + '</span>',
-                        '</div>',
-                    '</div>',
-                    '<div class="dc-field dc-checkbox">',
-                        '<label><input type="checkbox" name="det_alt[]" value="S" ' + altChecked + '> Alternativa</label>',
-                    '</div>',
-                    '<button type="button" class="btn btn-danger btn-sm btn-remove-card"><i class="glyphicon glyphicon-remove"></i> Eliminar</button>',
-                '</div>'
-            ].join('\n');
-            $container.append(card);
+            $container.append(buildCardForRow($(this)));
         });
         // Add the "add row" button at the bottom of cards
         $container.append('<button type="button" id="btn-add-card" class="btn btn-primary btn-sm">+ Agregar Fila</button>');
@@ -607,6 +642,9 @@ $(document).ready(function(){
 
     // Sync on load and resize
     syncView();
+    console.log('[detalle] tbody filas =', $("#detalles-table tbody tr").length,
+                ', cards =', $("#detalles-cards-container .detalles-card").length,
+                ', width =', window.innerWidth);
     var resizeTimer;
     $(window).resize(function(){
         clearTimeout(resizeTimer);
@@ -616,7 +654,12 @@ $(document).ready(function(){
     $(document).on('input', '.product-suggest', function() {
         var container = $(this).closest('tr, .detalles-card');
         if ($(this).val() !== $(this).data('selected')) {
-            container.find('input[name="det_cod_producto[]"]').val('');
+            if ($(this).closest('.detalles-card').length) {
+                var idx = $("#detalles-cards-container .detalles-card").index($(this).closest('.detalles-card'));
+                $("#detalles-table tbody tr").eq(idx).find('input[name="det_cod_producto[]"]').val('');
+            } else {
+                container.find('input[name="det_cod_producto[]"]').val('');
+            }
         }
     });
 
@@ -636,7 +679,9 @@ $(document).ready(function(){
         $("#detalles-table tbody").append(row);
         initProductSuggest($("#detalles-table tbody tr:last .product-suggest"));
         if ($(".detalles-mode-wrapper").hasClass('mode-cards-active')) {
-            rebuildCards();
+            // Append only the new card so existing cards/values are not rebuilt
+            $("#detalles-cards-container #btn-add-card").before(buildCardForRow($("#detalles-table tbody tr:last")));
+            initProductSuggest($("#detalles-cards-container .detalles-card:last .product-suggest"));
         }
     });
 
@@ -649,7 +694,7 @@ $(document).ready(function(){
     });
 
     $(document).on('click', '.btn-remove-card', function(){
-        var idx = $(this).closest('.detalles-card').index();
+        var idx = $("#detalles-cards-container .detalles-card").index($(this).closest('.detalles-card'));
         $(this).closest('.detalles-card').remove();
         $("#detalles-table tbody tr").eq(idx).remove();
         // Rebuild to keep indexes aligned
@@ -660,11 +705,16 @@ $(document).ready(function(){
         $("#btn-add-row").click();
     });
 
-    $(document).on('input', '.qty, .price', function(){
-        var container = $(this).closest('tr, .detalles-card');
-        var qty = parseFloat(container.find('.qty').val()) || 0;
-        var price = parseFloat(container.find('.price').val()) || 0;
+    $(document).on('input', '.qty, .price, .dc-qty, .dc-price', function(){
+        var container = $(this).closest('.detalles-card, tr');
+        var qty = parseFloat(container.find('.qty, .dc-qty').first().val()) || 0;
+        var price = parseFloat(container.find('.price, .dc-price').first().val()) || 0;
         container.find('.row-total').text((qty * price).toFixed(2));
+        syncCardsToTable();
+    });
+
+    $(document).on('input change', '.dc-detalle, .dc-alt', function(){
+        syncCardsToTable();
     });
 });
 </script>
