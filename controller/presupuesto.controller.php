@@ -725,106 +725,14 @@ class PresupuestoController{
         }
         
         require_once 'fpdf/fpdf.php';
-        
+
         $pdf = new FPDF('P', 'mm', 'A4');
-        $pdf->AddPage();
-        $pdf->SetMargins(0, 0, 0);
         $pdf->SetAutoPageBreak(false, 0);
-        $pdf->SetTextColor(0, 0, 0);
+        $datos = $this->prepararDatosExpediente($alm);
+        $this->dibujarCaratulaExpediente($pdf, $alm, $datos);
 
-        $pageW = 210;
-        $centerX = $pageW / 2;
-        $blockW = 140;
-        $blockX = $centerX - ($blockW / 2);
-
-        // Logo centrado en la parte superior
-        $logo_path = 'assets/image/Logo.jpg';
-        $y = 12;
-        if (file_exists($logo_path)) {
-            $logoW = 55;
-            $logoX = $centerX - ($logoW / 2);
-            $pdf->Image($logo_path, $logoX, $y, $logoW);
-            $y += 32;
-        }
-
-        // Código y fecha del presupuesto (debajo del logo)
-        $fecha_presupuesto = $this->formatearFechaCaratula($alm->fecha);
-
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Código de Presupuesto:', (string)$alm->cod_presupuesto);
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Fecha de Presupuesto:', $fecha_presupuesto);
-        $y += 8;
-
-        // Datos del caso
-        $paciente_nombre = !empty($alm->PresupuestoPaciente) ? $alm->PresupuestoPaciente : 'Sin Paciente';
-
-        $medico_nombre = 'Sin Médico';
-        if(!empty($alm->cod_medico)) {
-            require_once 'model/medicos.php';
-            $medicoModel = new Medicos();
-            $medico = $medicoModel->Obtener($alm->cod_medico);
-            if($medico) {
-                $medico_nombre = $medico->mediconombre;
-            }
-        }
-
-        $institucion = 'Institución No Especificada';
-        if(!empty($alm->cod_cliente)) {
-            require_once 'model/clientes.php';
-            $clienteModel = new Clientes();
-            $cliente = $clienteModel->Obtener($alm->cod_cliente);
-            if($cliente) {
-                if(!empty($cliente->nombre)) {
-                    $institucion = $cliente->nombre;
-                } elseif(isset($cliente->localidad) && !empty($cliente->localidad)) {
-                    $institucion = $cliente->localidad;
-                }
-            }
-        }
-
-        $cirugia_codigo = !empty($alm->Licitacion_Nro)
-            ? 'CIR-' . str_pad($alm->Licitacion_Nro, 6, '0', STR_PAD_LEFT)
-            : 'Sin especificar';
-
-        $fecha_cirugia = $this->formatearFechaCaratula($alm->PresupFecSeg);
-        if($fecha_cirugia === 'No especificada' && !empty($alm->fecha_validez)) {
-            $fecha_cirugia = $this->formatearFechaCaratula($alm->fecha_validez);
-        }
-
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Paciente:', $paciente_nombre, 14);
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Médico:', 'Dr. ' . $medico_nombre, 14);
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Institución:', $institucion, 13);
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Código de Cirugía:', $cirugia_codigo, 12);
-        $y = $this->caratulaCampoEtiquetado($pdf, $y, $blockX, $blockW, 'Fecha de Cirugía:', $fecha_cirugia, 12);
-
-        $pdf->SetFont('Arial', 'I', 8);
-        $pdf->SetXY(10, 280);
-        $pdf->Cell(190, 5, utf8_decode('CARÁTULA DE PRESUPUESTO - COPIA DE CONTROL'), 0, 0, 'C');
-        
         $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
         $pdf->Output($disposition, 'Caratula_Presupuesto_' . $alm->cod_presupuesto . '.pdf');
-    }
-
-    private function formatearFechaCaratula($fecha) {
-        if(empty($fecha)) {
-            return 'No especificada';
-        }
-        if(preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $fecha)) {
-            return $fecha;
-        }
-        $ts = strtotime($fecha);
-        return $ts ? date('d/m/Y', $ts) : $fecha;
-    }
-
-    private function caratulaCampoEtiquetado($pdf, $y, $x, $width, $etiqueta, $valor, $fontSizeValor = 12) {
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->SetXY($x, $y);
-        $pdf->Cell($width, 6, utf8_decode($etiqueta), 0, 0, 'C');
-
-        $pdf->SetFont('Arial', '', $fontSizeValor);
-        $pdf->SetXY($x, $y + 6);
-        $pdf->MultiCell($width, 6, utf8_decode($valor), 0, 'C');
-
-        return $pdf->GetY() + 4;
     }
 
     private function prepararDatosExpediente($alm, $hospCod = null) {
@@ -895,41 +803,26 @@ class PresupuestoController{
         $pdf->AddPage();
         $pdf->SetMargins(0, 0, 0);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->SetDrawColor(60, 80, 110);
 
-        // $pdf->SetFont('Arial', 'B', 26);
-        // $pdf->SetXY(15, 15);
-        // $pdf->Cell(0, 12, utf8_decode('EXPEDIENTE'), 0, 1, 'L');
-
-        // $pdf->SetFont('Arial', 'B', 12);
-        // $pdf->SetXY(15, 29);
-        // $pdf->Cell(0, 8, utf8_decode('HEMODINAMICS'), 0, 1, 'L');
-
-        $labelX = 15;
-        $valueX = 85;
+        $x = 15;
         $y = 55;
-        $labelW = 70;
-        $lineH = 17;
+        $lineH = 10;
 
         $campos = [
             'Paciente:' => (string)$alm->PresupuestoPaciente,
             'Médico:' => $datos['medico_nombre'],
             'Obra Social:' => $datos['cliente_nombre'],
             'Servicio:' => $datos['hosp_name'],
-            'Fecha de Cx:' => '' ,//$this->formatearFechaCaratula($alm->PresupFecSeg),
-            'Horario de Cx:' => '' ,//trim((string)$alm->PresupHorSeg),
+            'Fecha de Cx:' => '',
+            'Horario de Cx:' => '',
             'Asistencia Técnica:' => '',
             'Coordinador:' => $datos['coordinador_nombre'],
         ];
 
         foreach($campos as $label => $valor) {
             $pdf->SetFont('Arial', 'B', 13);
-            $pdf->SetXY($labelX, $y);
-            $pdf->Cell($labelW, 9, utf8_decode($label), 0, 0, 'L');
-            $pdf->SetFont('Arial', 'B', 16);
-            $pdf->SetXY($valueX, $y);
-            $pdf->Cell(110, 9, utf8_decode($valor), 0, 0, 'L');
-            $pdf->Line($labelX, $y + 10, 195, $y + 10);
+            $pdf->SetXY($x, $y);
+            $pdf->Cell(0, 8, utf8_decode($label . ' ' . $valor), 0, 0, 'L');
             $y += $lineH;
         }
 
