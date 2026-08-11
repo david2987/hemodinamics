@@ -580,6 +580,19 @@ class presupuesto
         }
     }
 
+    public function UpdateHospCod($id, $hospCod)
+    {
+        try
+        {
+            $stm = $this->pdo->prepare("UPDATE presupuestos SET HospCod = ? WHERE cod_presupuesto = ?");
+            $stm->execute(array($hospCod, $id));
+        }
+        catch(Exception $e)
+        {
+            die($e->getMessage());
+        }
+    }
+
     public function AutorizarPresupuesto($id, $paciente, $cod_medico, $vndCod, $comentario, $hospCod = null, $items_a_eliminar = [])
     {
         try

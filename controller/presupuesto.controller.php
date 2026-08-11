@@ -515,6 +515,11 @@ class PresupuestoController{
         // Use hospCod from modal if provided, otherwise fallback to existing
         $hospCod = !empty($_REQUEST['hospCod']) ? (int)$_REQUEST['hospCod'] : $alm->HospCod;
 
+        // Save the service only when a different one was selected
+        if ($hospCod && $hospCod != $alm->HospCod) {
+            $this->model->UpdateHospCod($_REQUEST['id'], $hospCod);
+        }
+
         // Use fecha_remito from modal if provided, otherwise fallback to original
         $fecha_remito = !empty($_REQUEST['fecha_remito']) ? $_REQUEST['fecha_remito'] : $alm->fecha;
         
@@ -820,6 +825,293 @@ class PresupuestoController{
         $pdf->MultiCell($width, 6, utf8_decode($valor), 0, 'C');
 
         return $pdf->GetY() + 4;
+    }
+
+    private function prepararDatosExpediente($alm, $hospCod = null) {
+        $datos = [];
+        $HospCod = $hospCod !== null ? (int)$hospCod : (!empty($alm->HospCod) ? (int)$alm->HospCod : null);
+        $datos['HospCod'] = $HospCod;
+        $datos['cliente_nombre'] = 'Sin Datos';
+        $datos['domicilio'] = '';
+        $datos['localidad'] = '';
+        $datos['cuit'] = '';
+        $datos['condicion_iva'] = '';
+        if(!empty($alm->cod_cliente)) {
+            require_once 'model/clientes.php';
+            $clienteModel = new Clientes();
+            $cliente = $clienteModel->Obtener($alm->cod_cliente);
+            if($cliente) {
+                $datos['cliente_nombre'] = $cliente->nombre;
+                $datos['domicilio'] = isset($cliente->domicilio) ? $cliente->domicilio : '';
+                $datos['localidad'] = isset($cliente->localidad) ? $cliente->localidad : '';
+                $datos['cuit'] = isset($cliente->cuit) ? $cliente->cuit : '';
+                $datos['condicion_iva'] = isset($cliente->condicion_iva) ? $cliente->condicion_iva : 'RESPONSABLE INSCRIPTO';
+            }
+        }
+        require_once 'model/medicos.php';
+        $datos['medico_nombre'] = 'Sin Datos';
+        if(!empty($alm->cod_medico)) {
+            $medicoModel = new Medicos();
+            $medico = $medicoModel->Obtener($alm->cod_medico);
+            if($medico) {
+                $datos['medico_nombre'] = $medico->mediconombre;
+            }
+        }
+        $datos['fpago_name'] = '';
+        foreach($this->model->buscapagos() as $p) {
+            if($p->FfaCod == $alm->f_pago) {
+                $datos['fpago_name'] = $p->FfaDesc;
+                break;
+            }
+        }
+        $datos['hosp_name'] = '';
+        if(!empty($HospCod)) {
+            foreach($this->model->buscainstitucion() as $p) {
+                if($p->HospCod == $HospCod) {
+                    $datos['hosp_name'] = $p->HospDesc;
+                    break;
+                }
+            }
+        }
+        $datos['total_general'] = 0;
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $datos['total_general'] += (float)$d->importe;
+            }
+        }
+        $datos['coordinador_nombre'] = '';
+        if(!empty($alm->VndCod)) {
+            require_once 'model/vtavnd.php';
+            $vtModel = new Vtavnd();
+            $coord = $vtModel->Obtener($alm->VndCod);
+            if($coord && !empty($coord->VndNom)) {
+                $datos['coordinador_nombre'] = $coord->VndNom;
+            }
+        }
+        return $datos;
+    }
+
+    private function dibujarCaratulaExpediente($pdf, $alm, $datos) {
+        $pdf->AddPage();
+        $pdf->SetMargins(0, 0, 0);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetDrawColor(60, 80, 110);
+
+        // $pdf->SetFont('Arial', 'B', 26);
+        // $pdf->SetXY(15, 15);
+        // $pdf->Cell(0, 12, utf8_decode('EXPEDIENTE'), 0, 1, 'L');
+
+        // $pdf->SetFont('Arial', 'B', 12);
+        // $pdf->SetXY(15, 29);
+        // $pdf->Cell(0, 8, utf8_decode('HEMODINAMICS'), 0, 1, 'L');
+
+        $labelX = 15;
+        $valueX = 85;
+        $y = 55;
+        $labelW = 70;
+        $lineH = 17;
+
+        $campos = [
+            'Paciente:' => (string)$alm->PresupuestoPaciente,
+            'Médico:' => $datos['medico_nombre'],
+            'Obra Social:' => $datos['cliente_nombre'],
+            'Servicio:' => $datos['hosp_name'],
+            'Fecha de Cx:' => '' ,//$this->formatearFechaCaratula($alm->PresupFecSeg),
+            'Horario de Cx:' => '' ,//trim((string)$alm->PresupHorSeg),
+            'Asistencia Técnica:' => '',
+            'Coordinador:' => $datos['coordinador_nombre'],
+        ];
+
+        foreach($campos as $label => $valor) {
+            $pdf->SetFont('Arial', 'B', 13);
+            $pdf->SetXY($labelX, $y);
+            $pdf->Cell($labelW, 9, utf8_decode($label), 0, 0, 'L');
+            $pdf->SetFont('Arial', 'B', 16);
+            $pdf->SetXY($valueX, $y);
+            $pdf->Cell(110, 9, utf8_decode($valor), 0, 0, 'L');
+            $pdf->Line($labelX, $y + 10, 195, $y + 10);
+            $y += $lineH;
+        }
+
+        $pdf->SetFont('Arial', '', 11);
+        $pdf->SetXY(15, 248);
+        $pdf->Cell(0, 6, utf8_decode('Fecha de impresión: ' . date('d/m/Y H:i:s')), 0, 0, 'L');
+
+        $pdf->SetFont('Arial', 'B', 20);
+        $pdf->SetXY(15, 258);
+        $pdf->Cell(0, 10, 'Ppto: ' . $alm->cod_presupuesto, 0, 0, 'L');
+
+        $logo_path = 'assets/image/Logo.jpg';
+        if (file_exists($logo_path)) {
+            $pdf->Image($logo_path, 135, 256, 62);
+        }
+    }
+
+    private function dibujarHeaderPresupuesto($pdf, $background_path, $alm, $datos) {
+        if(file_exists($background_path)) {
+            $pdf->Image($background_path, 0, 0, 210, 297);
+        }
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetXY(155, 9.5);
+        $pdf->Cell(50, 5, $alm->cod_presupuesto, 0, 0, 'L');
+        $pdf->SetXY(158, 13.5);
+        $pdf->Cell(50, 5, date('d/m/Y', strtotime($alm->fecha)), 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetXY(22, 45.5);
+        $pdf->Cell(80, 5, utf8_decode($datos['cliente_nombre']), 0, 0, 'L');
+        $pdf->SetXY(22, 50);
+        $pdf->Cell(80, 5, utf8_decode($datos['domicilio']), 0, 0, 'L');
+        $pdf->SetXY(25, 55);
+        $pdf->Cell(80, 5, utf8_decode($datos['condicion_iva']), 0, 0, 'L');
+        $pdf->SetXY(89, 50);
+        $pdf->Cell(50, 5, utf8_decode($datos['localidad']), 0, 0, 'L');
+        $pdf->SetXY(82, 55);
+        $pdf->Cell(50, 5, utf8_decode($datos['cuit']), 0, 0, 'L');
+        $pdf->SetXY(20, 67);
+        $pdf->Cell(80, 5, utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
+        $pdf->SetXY(29, 72);
+        $fecha_hora_ap = $alm->PresupFecSeg . ' ' . $alm->PresupHorSeg;
+        $pdf->Cell(80, 5, utf8_decode($fecha_hora_ap), 0, 0, 'L');
+        $pdf->SetXY(84, 66.5);
+        $pdf->Cell(85, 5, utf8_decode($datos['medico_nombre']), 0, 0, 'L');
+        $pdf->SetXY(89, 72);
+        $pdf->Cell(85, 5, utf8_decode($datos['hosp_name']), 0, 0, 'L');
+    }
+
+    private function dibujarFooterPresupuesto($pdf, $alm, $datos) {
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetXY(45, 260);
+        $pdf->Cell(60, 5, date('d/m/Y', strtotime($alm->fecha_validez)), 0, 0, 'L');
+        $pdf->SetXY(45, 265);
+        $pdf->Cell(60, 5, utf8_decode($datos['fpago_name']), 0, 0, 'L');
+        $pdf->SetXY(45, 270);
+        $pdf->Cell(60, 5, utf8_decode($alm->plazo), 0, 0, 'L');
+        $pdf->SetXY(145, 270);
+        $pdf->Cell(50, 5, 'TOTAL: $ ' . number_format($datos['total_general'], 2), 0, 0, 'R');
+        $pdf->SetXY(105, 260);
+        $pdf->MultiCell(90, 4, utf8_decode($alm->PresupVndCom), 0, 'L');
+    }
+
+    private function dibujarPaginasPresupuestoExpediente($pdf, $alm, $datos) {
+        $background_path = 'assets/sheet/Presupuesto_page-0001.jpg';
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->AddPage();
+        $this->dibujarHeaderPresupuesto($pdf, $background_path, $alm, $datos);
+        $y = 90;
+        $pdf->SetFont('Arial', '', 9);
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $text_check = utf8_decode($d->detalle_ag);
+                $pdf->SetFont('Arial', '', 9);
+                $textWidth_check = $pdf->GetStringWidth($text_check);
+                $numLines_check = max(1, ceil($textWidth_check / 95));
+                $itemHeight_check = ($numLines_check * 5) + 2 + 6;
+                if ($y + $itemHeight_check > 249) {
+                    $this->dibujarFooterPresupuesto($pdf, $alm, $datos);
+                    $pdf->AddPage();
+                    $this->dibujarHeaderPresupuesto($pdf, $background_path, $alm, $datos);
+                    $y = 90;
+                    $pdf->SetFont('Arial', '', 9);
+                }
+                $pdf->SetXY(2, $y);
+                $pdf->Cell(20, 5, $d->item, 0, 0, 'C');
+                $pdf->SetXY(19, $y);
+                $pdf->Cell(15, 5, $d->cantidad, 0, 0, 'C');
+                $pdf->SetXY(158, $y);
+                $pdf->Cell(20, 5, '$ ' . number_format($d->p_unitario, 2), 0, 0, 'R');
+                $pdf->SetXY(181, $y);
+                $pdf->Cell(20, 5, '$ ' . number_format($d->importe, 2), 0, 0, 'R');
+                $pdf->SetXY(40, $y);
+                $pdf->MultiCell(95, 5, utf8_decode($d->detalle_ag), 0, 'L');
+                $y = $pdf->GetY() + 2;
+                $y += 6;
+            }
+        }
+        $this->dibujarFooterPresupuesto($pdf, $alm, $datos);
+    }
+
+    private function dibujarHeaderRemito($pdf, $alm, $datos, $fecha_remito) {
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetXY(159, 30);
+        $pdf->Cell(50, 5, date('d    m    Y', strtotime($fecha_remito)), 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetXY(40, 61);
+        $pdf->Cell(80, 5, utf8_decode($datos['cliente_nombre']), 0, 0, 'L');
+        $pdf->SetXY(40, 68);
+        $pdf->Cell(80, 5, utf8_decode($datos['domicilio']), 0, 0, 'L');
+        $pdf->SetXY(60, 84);
+        $pdf->Cell(80, 5, utf8_decode($datos['fpago_name']), 0, 0, 'L');
+        $pdf->SetXY(160, 68);
+        $pdf->Cell(50, 5, utf8_decode($datos['localidad']), 0, 0, 'L');
+        $pdf->SetXY(160, 74);
+        $pdf->Cell(50, 5, utf8_decode($datos['cuit']), 0, 0, 'L');
+    }
+
+    private function dibujarFooterRemito($pdf, $alm, $datos) {
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetXY(57, 250);
+        $pdf->Cell(60, 5, "PACIENTE: " . utf8_decode($alm->PresupuestoPaciente), 0, 0, 'L');
+        $pdf->SetXY(57, 255);
+        $pdf->Cell(60, 5, "MEDICO: " . utf8_decode($datos['medico_nombre']), 0, 0, 'L');
+        $pdf->SetXY(57, 260);
+        $pdf->Cell(60, 5, "SERVICIO: " . utf8_decode($datos['hosp_name']), 0, 0, 'L');
+    }
+
+    private function dibujarPaginasRemitoExpediente($pdf, $alm, $datos, $fecha_remito) {
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->AddPage();
+        $this->dibujarHeaderRemito($pdf, $alm, $datos, $fecha_remito);
+        $y = 102;
+        $pdf->SetFont('Arial', '', 9);
+        if(isset($alm->detalles)) {
+            foreach($alm->detalles as $d) {
+                $text_check = utf8_decode($d->detalle_ag);
+                $pdf->SetFont('Arial', '', 9);
+                $textWidth_check = $pdf->GetStringWidth($text_check);
+                $numLines_check = max(1, ceil($textWidth_check / 95));
+                $itemHeight_check = ($numLines_check * 5) + 2 + 6;
+                if ($y + $itemHeight_check > 249) {
+                    $this->dibujarFooterRemito($pdf, $alm, $datos);
+                    $pdf->AddPage();
+                    $this->dibujarHeaderRemito($pdf, $alm, $datos, $fecha_remito);
+                    $y = 90;
+                    $pdf->SetFont('Arial', '', 9);
+                }
+                $pdf->SetXY(19, $y);
+                $pdf->Cell(20, 5, $d->item, 0, 0, 'C');
+                $pdf->SetXY(36, $y);
+                $pdf->Cell(15, 5, $d->cantidad, 0, 0, 'C');
+                $pdf->SetXY(57, $y);
+                $pdf->MultiCell(95, 5, utf8_decode($d->detalle_ag), 0, 'L');
+                $y = $pdf->GetY() + 2;
+                $y += 6;
+            }
+        }
+        $this->dibujarFooterRemito($pdf, $alm, $datos);
+    }
+
+    public function ExpedientePDF() {
+        if(!isset($_REQUEST['id'])) {
+            die("ID no especificado");
+        }
+        $alm = $this->model->Obtener($_REQUEST['id']);
+        if(!$alm) {
+            die("Presupuesto no encontrado");
+        }
+        if($alm->EspCod != 3) {
+            die("Solo se puede generar expediente para presupuestos autorizados");
+        }
+        require_once 'fpdf/fpdf.php';
+        $pdf = new FPDF('P', 'mm', 'A4');
+        $pdf->SetAutoPageBreak(false, 0);
+        $datos = $this->prepararDatosExpediente($alm);
+        $this->dibujarCaratulaExpediente($pdf, $alm, $datos);
+        $this->dibujarPaginasPresupuestoExpediente($pdf, $alm, $datos);
+        $this->dibujarPaginasRemitoExpediente($pdf, $alm, $datos, date('Y-m-d'));
+        $disposition = (isset($_REQUEST['download']) && $_REQUEST['download'] == '1') ? 'D' : 'I';
+        $pdf->Output($disposition, 'Expediente_' . $alm->cod_presupuesto . '.pdf');
     }
 
     public function ObtenerDetallesJson() {

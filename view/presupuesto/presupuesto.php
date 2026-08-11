@@ -300,6 +300,7 @@ $where= buscar();
             <th style="width:10px;">P</th>
             <th style="width:10px;">R</th>
             <th style="width:10px;">C</th>
+            <th style="width:10px;" title="Expediente Completo">E</th>
              <th style="width:10px;"></th>
               <th style="width:10px;"></th>
             <?php } ?>
@@ -356,6 +357,13 @@ $where= buscar();
                 <td style="width: 10px;padding:4px"><a title='Visualizar Carátula PDF' href="?c=presupuesto&a=CaratulaPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><img src='assets/image/Lists.png' style="filter: sepia(0.5) hue-rotate(30deg);"></a></td>
                   <?php } else { ?>
                   <td style="width: 10px;padding:4px;"><img src='assets/image/Lists.png' title="Solo para presupuestos autorizados" style="opacity: 0.5;"></td>
+                  <?php } ?>
+
+                  <!-- EXPEDIENTE COMPLETO (solo autorizados) -->
+                  <?php if($r->EspCod == 3) { ?>
+                <td style="width: 10px;padding:4px"><a title='Expediente Completo (Carátula + Presupuesto + Remito)' href="?c=presupuesto&a=ExpedientePDF&id=<?php echo $r->cod_presupuesto; ?>&download=1" target="_blank"><img src='assets/image/Report.png' style="filter: hue-rotate(200deg);"></a></td>
+                  <?php } else { ?>
+                  <td style="width: 10px;padding:4px;"><img src='assets/image/Report.png' title="Solo para presupuestos autorizados" style="opacity: 0.5;"></td>
                   <?php } ?>
 
                 <!-- EDITAR (solo vencidos, perdidos o pendientes) -->
@@ -1132,6 +1140,10 @@ $(document).ready(function() {
                 if (res.success) {
                     alert(res.message);
                     $("#modalAutorizar").modal('hide');
+                    var id = $("#aut_cod_presupuesto").val();
+                    if (id) {
+                        window.open('?c=presupuesto&a=ExpedientePDF&id=' + id + '&download=1', '_blank');
+                    }
                     window.location.reload();
                 } else {
                     alert("Error: " + res.message);
