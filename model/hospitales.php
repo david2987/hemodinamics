@@ -78,6 +78,8 @@ class Hospitales {
 
     public function Guardar($data) {
         try {
+            $data->HospLocCod = !empty($data->HospLocCod) ? (int)$data->HospLocCod : null;
+
             if (!empty($data->HospCod)) {
                 $sql = "UPDATE hospitales SET HospDesc = ?, HospMail = ?, HospCUIT = ?, HospTel = ?, HospDom = ?, HospCUFE = ?, HospLoc = ?, HospDesc2 = ?, HospLocCod = ? WHERE HospCod = ?";
                 $this->pdo->prepare($sql)->execute(array(

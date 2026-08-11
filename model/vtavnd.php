@@ -76,7 +76,9 @@ class Vtavnd {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            $data->VndCod = !empty($data->VndCod) ? (int)$data->VndCod : null;
+
+            if (!empty($data->VndCod)) {
                 $sql = "UPDATE vtavnd SET VndNom = ?, VndDir = ?, VndTel = ?, VndCel = ?, VndCom = ?, VndMai = ?, VndUsr = ? WHERE VndCod = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->VndNom,

@@ -77,7 +77,9 @@ class Medicos {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            $data->MelLocCod = !empty($data->MelLocCod) ? (int)$data->MelLocCod : 0;
+
+            if (!empty($data->cod_medico)) {
                 $sql = "UPDATE medicos SET localidad = ?, mediconombre = ?, medicodomicilio = ?, medicocod_postal = ?, medicotelefono = ?, medicocelular = ?, medicoemail = ?, MelLocCod = ? WHERE cod_medico = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->localidad,

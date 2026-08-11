@@ -70,7 +70,9 @@ class Categoriapresupuesto {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            $data->CprCod = !empty($data->CprCod) ? (int)$data->CprCod : null;
+
+            if (!empty($data->CprCod)) {
                 $sql = "UPDATE categoriapresupuesto SET CprDes = ? WHERE CprCod = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->CprDes,

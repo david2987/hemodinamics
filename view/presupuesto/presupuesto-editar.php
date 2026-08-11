@@ -312,14 +312,14 @@ textarea {
 
 <!-- Modal Previsualización -->
 <div class="modal fade" id="modalPreview" tabindex="-1" role="dialog" aria-labelledby="modalPreviewLabel">
-  <div class="modal-dialog modal-lg" role="document" style="width: 90%;">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="modalPreviewLabel">Previsualización de Presupuesto</h4>
       </div>
-      <div class="modal-body" style="height: 75vh;">
-        <iframe id="pdf-frame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+      <div class="modal-body" style="height: 75vh; overflow-y: auto;">
+        <div id="pdf-preview"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar y Editar</button>
@@ -328,6 +328,32 @@ textarea {
     </div>
   </div>
 </div>
+
+<script src="assets/js/pdfjs/pdf.min.js"></script>
+<style>
+#modalPreview .modal-dialog { width: 90%; }
+@media (max-width: 767px) {
+    #modalPreview .modal-dialog { width: 100%; margin: 0; }
+    #modalPreview .modal-content { min-height: 100vh; border-radius: 0; }
+}
+#pdf-preview .pdf-page {
+    margin: 0 auto 10px auto;
+    padding: 6px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+#pdf-preview canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+#pdf-preview .pdf-loading {
+    text-align: center;
+    color: #666;
+    padding: 20px 0;
+}
+</style>
 
 <script>
 $(document).ready(function(){
@@ -409,6 +435,42 @@ $(document).ready(function(){
         }
     });
 
+    // Preview PDF renderizado con PDF.js (ajustado al ancho, nunca se corta)
+    function renderPdfPreview(url) {
+        var $container = $("#pdf-preview");
+        $container.empty();
+        if (typeof pdfjsLib === 'undefined') {
+            $container.html('<div class="pdf-loading">El visor de PDF no pudo cargarse. <a href="' + url + '" target="_blank">Abrir PDF en pestaña nueva</a></div>');
+            return;
+        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/js/pdfjs/pdf.worker.min.js';
+        $container.html('<div class="pdf-loading">Generando previsualización...</div>');
+        pdfjsLib.getDocument(url).promise.then(function(pdf) {
+            $container.empty();
+            var dpr = window.devicePixelRatio || 1;
+            var containerWidth = $container.width();
+            var pagePromises = [];
+            for (var p = 1; p <= pdf.numPages; p++) {
+                pagePromises.push(pdf.getPage(p).then(function(page) {
+                    var baseViewport = page.getViewport({ scale: 1 });
+                    var scale = ((containerWidth - 12) * dpr) / baseViewport.width;
+                    var viewport = page.getViewport({ scale: scale });
+                    var canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    var pageDiv = document.createElement('div');
+                    pageDiv.className = 'pdf-page';
+                    pageDiv.appendChild(canvas);
+                    $container.append(pageDiv);
+                    return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                }));
+            }
+            return Promise.all(pagePromises);
+        }).catch(function() {
+            $container.html('<div class="pdf-loading">No se pudo generar la previsualización. <a href="' + url + '" target="_blank">Abrir PDF en pestaña nueva</a></div>');
+        });
+    }
+
     // Form Preview Logic
     $("#btn-previsualizar").click(function(){
         if (!validarFormulario()) {
@@ -427,9 +489,10 @@ $(document).ready(function(){
             dataType: 'json',
             success: function(response) {
                 if(response.url) {
-                    // Force refresh iframe
-                    $("#pdf-frame").attr('src', response.url + '?t=' + new Date().getTime());
                     $("#modalPreview").modal('show');
+                    $("#modalPreview").one('shown.bs.modal', function() {
+                        renderPdfPreview(response.url + '?t=' + new Date().getTime());
+                    });
                 } else {
                     alert("Error al generar la previsualización.");
                 }

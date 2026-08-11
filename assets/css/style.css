@@ -26,11 +26,11 @@ input{
     color: #000;
     outline: 0;
 }
-
+/* 
 #Grilla tbody tr:hover{
     background-color: aqua !important;
 
-}
+} */
 
 .botonFiltro{
     background-repeat: no-repeat;

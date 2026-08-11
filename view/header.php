@@ -44,7 +44,7 @@ try {
         <link rel="stylesheet" href="assets/js/jquery-ui/jquery-ui.min.css" />
         <script src="Multi-Select/js/m-select-d-box.min.js"></script>
         <script src="easyautocomplete/jquery.easy-autocomplete.js"></script>
-        <link rel="stylesheet" href="assets/css/style.css" />
+        <link rel="stylesheet" href="assets/css/style.css?v=2" />
         <link rel="stylesheet" href="easyautocomplete/easy-autocomplete.css"> <!-- easyautocomplete/easy-autocomplete.min.css-->
         <link rel="stylesheet" href="easyautocomplete/easy-autocomplete.themes.css">
         <link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
@@ -537,8 +537,8 @@ try {
                 if ($(this).attr('style') == 'background-color: lightblue;') {
                     $(this).css("background-color", "transparent");
                 } else {
-                    $(this).css("background-color", "lightblue");
-
+                   // $(this).css("background-color", "lightblue");
+                      $(this).css("background-color", "transparent");
                 }
             });
 

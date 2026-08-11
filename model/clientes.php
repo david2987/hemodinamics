@@ -99,6 +99,13 @@ class Clientes {
 
     public function Guardar($data) {
         try {
+            $data->CliTelCon1 = !empty($data->CliTelCon1) ? (int)$data->CliTelCon1 : null;
+            $data->CliTelCon2 = !empty($data->CliTelCon2) ? (int)$data->CliTelCon2 : null;
+            $data->CliTelCon3 = !empty($data->CliTelCon3) ? (int)$data->CliTelCon3 : null;
+            $data->CliTelCon4 = !empty($data->CliTelCon4) ? (int)$data->CliTelCon4 : null;
+            $data->CcliCod = !empty($data->CcliCod) ? (int)$data->CcliCod : null;
+            $data->CliLocCod = !empty($data->CliLocCod) ? (int)$data->CliLocCod : 0;
+
             if (!empty($data->cod_cliente)) {
                 $sql = "UPDATE clientes SET nombre = ?, domicilio = ?, localidad = ?, cod_postal = ?, telefono = ?, celular = ?, email = ?, cuit = ?, iva = ?, CliNomCon1 = ?, CliTelCon1 = ?, CliMaiCon1 = ?, CliNomCon2 = ?, CliTelCon2 = ?, CliMaiCon2 = ?, CliNomCon3 = ?, CliTelCon3 = ?, CliMaiCon3 = ?, CliNomCon4 = ?, CliTelCon4 = ?, CliMaiCon4 = ?, CliLocCod = ?, CcliCod = ? WHERE cod_cliente = ?";
                 $this->pdo->prepare($sql)->execute(array(

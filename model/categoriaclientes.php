@@ -70,7 +70,9 @@ class Categoriaclientes {
 
     public function Guardar($data) {
         try {
-            if (!empty($data->$pk)) {
+            $data->CcliCod = !empty($data->CcliCod) ? (int)$data->CcliCod : null;
+
+            if (!empty($data->CcliCod)) {
                 $sql = "UPDATE categoriaclientes SET CcliDes = ? WHERE CcliCod = ?";
                 $this->pdo->prepare($sql)->execute(array(
                     $data->CcliDes,

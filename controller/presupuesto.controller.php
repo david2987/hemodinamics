@@ -169,7 +169,7 @@ class PresupuestoController{
             $pdf->Cell(50, 5, $nro, 0, 0, 'L');
             
             $pdf->SetXY(158, 13.5);
-            $pdf->Cell(50, 5, $_REQUEST['fecha'], 0, 0, 'L');
+            $pdf->Cell(50, 5, date('d/m/Y', strtotime($_REQUEST['fecha'])), 0, 0, 'L');
 
             // Switch to regular font for client data values
             $pdf->SetFont('Arial', '', 9);
@@ -208,7 +208,7 @@ class PresupuestoController{
 
             // Bottom Left: Validez, Forma Pago, Plazo
             $pdf->SetXY(45, 260);
-            $pdf->Cell(60, 5, $_REQUEST['fecha_validez'], 0, 0, 'L');
+            $pdf->Cell(60, 5, date('d/m/Y', strtotime($_REQUEST['fecha_validez'])), 0, 0, 'L');
             
             $pdf->SetXY(45, 265);
             $pdf->Cell(60, 5, utf8_decode($fpago_name), 0, 0, 'L');
