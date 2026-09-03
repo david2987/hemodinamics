@@ -18,6 +18,8 @@ class PresupuestoController{
     
     public function Crud(){
         $alm = new Presupuesto();
+        $esCopia = false;
+        $origenId = null;
         
         if(isset($_REQUEST['id'])){
             $alm = $this->model->Obtener($_REQUEST['id']);
@@ -26,6 +28,31 @@ class PresupuestoController{
             $alm->fecha = date('d/m/Y');
         }
         
+        require_once 'view/header.php';
+        require_once 'view/presupuesto/presupuesto-editar.php';
+        require_once 'view/footer.php';
+    }
+
+    public function Copiar(){
+        if(!isset($_REQUEST['id'])){
+            header('Location: index.php?c=presupuesto');
+            exit;
+        }
+
+        $orig = $this->model->Obtener($_REQUEST['id']);
+        if(!$orig){
+            header('Location: index.php?c=presupuesto');
+            exit;
+        }
+
+        $alm = $orig;
+        $alm->cod_presupuesto = $this->model->ProximoNro();
+        $alm->fecha = date('d/m/Y');
+        $alm->PresupuestoPaciente = '';
+        $alm->fecha_validez = date('Y-m-d', strtotime('+1 month'));
+        $esCopia = true;
+        $origenId = (int)$_REQUEST['id'];
+
         require_once 'view/header.php';
         require_once 'view/presupuesto/presupuesto-editar.php';
         require_once 'view/footer.php';
@@ -169,7 +196,8 @@ class PresupuestoController{
             $pdf->Cell(50, 5, $nro, 0, 0, 'L');
             
             $pdf->SetXY(158, 13.5);
-            $pdf->Cell(50, 5, date('d/m/Y', strtotime($_REQUEST['fecha'])), 0, 0, 'L');
+            // $pdf->Cell(50, 5, date('d/m/Y', strtotime($_REQUEST['fecha'])), 0, 0, 'L');
+             $pdf->Cell(50, 5, $_REQUEST['fecha'], 0, 0, 'L');
 
             // Switch to regular font for client data values
             $pdf->SetFont('Arial', '', 9);

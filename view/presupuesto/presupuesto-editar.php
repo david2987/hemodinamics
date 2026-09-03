@@ -111,18 +111,57 @@ if(!empty($alm->HospCod)) {
 textarea {
   resize: none;
 }
+.copia-aviso {
+    animation: copiaPop 0.5s ease-out;
+}
+@keyframes copiaPop {
+    0% { transform: translateY(-12px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
 </style>
 <form id="frm-presupuesto" action="?c=presupuesto&a=Guardar" method="post" enctype="multipart/form-data">
     <input type="hidden" name="cod_presupuesto" value="<?php echo $alm->cod_presupuesto; ?>" />
+    <?php if(!empty($esCopia)): ?>
+    <div class="alert alert-warning copia-aviso" style="font-size: 15px; margin-bottom: 15px; border-left: 6px solid #f0ad4e;">
+        <span class="glyphicon glyphicon-warning-sign"></span>
+        <strong>Estás editando una COPIA</strong> del presupuesto N° <?php echo (int)$origenId; ?>.
+        Nuevo número: <strong><?php echo $alm->cod_presupuesto; ?></strong>.
+        El original no se modifica. Completá el <strong>Paciente</strong> para poder guardarla.
+    </div>
+    <?php endif; ?>
     <div class="row">
         <div class="col-md-6">
-            <h1 class="page-header" style="color: #206773; font-weight: bold;">Presupuestos</h1>
+            <h1 class="page-header" style="color: #206773; font-weight: bold;"><?php echo !empty($esCopia) ? 'Copia de Presupuesto' : 'Presupuestos'; ?></h1>
         </div>
         <div class="col-md-6 text-right" style="padding-top: 20px;">
-            <button type="button" class="btn btn-info" style="background-color: #00acee; border: none; font-weight: bold; padding: 10px 20px;">Importar</button>
+            <?php if(isset($_REQUEST['id']) && empty($esCopia)): ?>
+            <button type="button" class="btn btn-info" style="background-color: #00acee; border: none; font-weight: bold; padding: 10px 20px;" data-toggle="modal" data-target="#modalCopiar">Importar</button>
+            <?php endif; ?>
             <button type="button" class="btn btn-primary" onclick="$('#btn-previsualizar').click();" style="background-color: #00acee; border: none; font-weight: bold; padding: 10px 20px; margin-left: 10px;">Confirmar</button>
         </div>
     </div>
+
+    <?php if(isset($_REQUEST['id']) && empty($esCopia)): ?>
+    <!-- Modal Confirmar Copiado -->
+    <div class="modal fade" id="modalCopiar" tabindex="-1" role="dialog" aria-labelledby="modalCopiarLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="modalCopiarLabel">Copiar presupuesto</h4>
+          </div>
+          <div class="modal-body">
+            <p>¿Desea copiar el presupuesto N° <strong><?php echo (int)$alm->cod_presupuesto; ?></strong>?</p>
+            <p>Se creará un <strong>nuevo presupuesto</strong> con los mismos datos y el mismo detalle. Deberá completar el <strong>Paciente</strong> antes de poder guardarlo. El presupuesto original no se modifica.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='?c=presupuesto&a=Copiar&id=<?php echo (int)$alm->cod_presupuesto; ?>'">Sí, copiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <ul class="nav nav-tabs" style="margin-bottom: 20px;">
       <li class="active"><a href="#">General</a></li>
@@ -222,7 +261,7 @@ textarea {
                                     <td data-label="Alt."><input type="checkbox" name="det_alt[]" value="S" <?php echo $d->itemAlt == 'S' ? 'checked' : ''; ?>></td>
                                     <td data-label="Producto">
                                         <input type="hidden" name="det_cod_producto[]" value="<?php echo $d->cod_producto; ?>" />
-                                        <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars($d->producto_titulo); ?>" />
+                                        <input type="text" class="form-control input-sm product-suggest" value="<?php echo htmlspecialchars(isset($d->producto_titulo) ? $d->producto_titulo : ''); ?>" />
                                     </td>
                                     <td data-label="Detalle"><textarea name="det_detalle[]" class="form-control input-md" style="height: 134px;"><?php echo $d->detalle_ag; ?></textarea></td>
                                     <td data-label="Cant."><input type="number" name="det_cantidad[]" class="form-control input-sm qty" value="<?php echo $d->cantidad; ?>" /></td>

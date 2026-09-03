@@ -356,7 +356,7 @@ class presupuesto
 
             if($r) {
                 // Fetch details
-                $stm = $this->pdo->prepare("SELECT * FROM detalles_presupuesto INNER JOIN productos ON detalles_presupuesto.cod_producto = productos.cod_producto WHERE detalles_presupuesto.cod_presupuesto = ? ORDER BY detalles_presupuesto.item");
+                $stm = $this->pdo->prepare("SELECT detalles_presupuesto.*, productos.producto_titulo FROM detalles_presupuesto LEFT JOIN productos ON detalles_presupuesto.cod_producto = productos.cod_producto WHERE detalles_presupuesto.cod_presupuesto = ? ORDER BY detalles_presupuesto.item");
                 $stm->execute(array($id));
                 $r->detalles = $stm->fetchAll(PDO::FETCH_OBJ);
             }
