@@ -32,6 +32,33 @@ input{
 
 }
 
+/* Coloreado de fila por estado/subestado (SueCod) - Coordinadores / Panel de Cirugías */
+tr.estado-sue-6, tr.estado-sue-7, tr.estado-sue-9 { background-color: #fff8e1; }
+tr.estado-sue-10 { background-color: #fff3cd; }
+tr.estado-sue-11 { background-color: #d7ebff; }
+tr.estado-sue-12 { background-color: #d4edda; }
+tr.estado-sue-8, tr.estado-sue-13 { background-color: #f8d7da; }
+
+/* Gestion de Stock: alertas de vencimiento de lote y quiebre de stock */
+tr.lote-vencido { background-color: #f8d7da; }
+tr.lote-por-vencer { background-color: #fff3cd; }
+tr.stock-bajo-minimo { background-color: #ffe5d0; }
+
+/* Modulo Consumo */
+tr.consumo-pendiente { background-color: #fff3cd; }
+tr.consumo-cargado { background-color: #d4edda; }
+tr.consumo-sin-consumo { background-color: #e2e3e5; }
+
+/* Modulo Ordenes de Compra */
+tr.oc-pendiente { background-color: #fff3cd; }
+tr.oc-parcial { background-color: #d7ebff; }
+tr.oc-completa { background-color: #d4edda; }
+tr.oc-anulada { background-color: #e2e3e5; color: #6c757d; }
+
+/* Modulo Facturacion */
+tr.fact-completa { background-color: #d4edda; }
+tr.fact-incompleta { background-color: #fff3cd; }
+
 .botonFiltro{
     background-repeat: no-repeat;
     margin-bottom: 0;

@@ -46,7 +46,8 @@ class AuthController {
                     $_SESSION['user'] = [
                         'UsrCod' => $user->UsrCod,
                         'UsrInf' => $user->UsrInf,
-                        'UsrAdm' => $user->UsrAdm
+                        'UsrAdm' => $user->UsrAdm,
+                        'GruCod' => $user->GruCod
                     ];
                     header('Location: index.php');
                     exit;

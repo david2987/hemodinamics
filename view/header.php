@@ -847,6 +847,10 @@ try {
                     <a href="index.php"><i class="fa-solid fa-file-invoice-dollar"></i><span>Presupuestos</span></a>
                 </li>
 
+                <li class="sidebar-menu-item <?php echo $activeController === 'cirugia' ? 'active' : ''; ?>">
+                    <a href="index.php?c=cirugia"><i class="fa-solid fa-kit-medical"></i><span>Panel de Cirugías</span></a>
+                </li>
+
                 <li class="sidebar-menu-item <?php echo $activeController === 'clientes' ? 'active' : ''; ?>">
                     <a href="index.php?c=clientes"><i class="fa-solid fa-users"></i><span>Clientes</span></a>
                 </li>

@@ -639,6 +639,21 @@ class presupuesto
         }
     }
 
+    public function ListarSubestadosAutorizado()
+    {
+        try
+        {
+            $sql = "SELECT SueCod, SueDes FROM sisespsub WHERE EspCod = 3 ORDER BY SueCod ASC";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute();
+            return $stm->fetchAll(PDO::FETCH_OBJ);
+        }
+        catch(Exception $e)
+        {
+            die($e->getMessage());
+        }
+    }
+
     public function ListarMotivosAnulacion()
     {
         try
@@ -650,6 +665,123 @@ class presupuesto
         }
         catch(Exception $e)
         {
+            die($e->getMessage());
+        }
+    }
+
+    private function ArmarFiltrosCoordinador($vndCod, $filtros)
+    {
+        // EspCod=3 = Autorizado. Se excluyen SueCod 11 (Fecha Confirmada de CX) y 12 (Cx Realizada):
+        // esos ya fueron aceptados por el Coordinador y viven en las grillas Aceptadas/Realizadas del Panel de Cirugía.
+        $where = " WHERE presupuestos.EspCod = 3 AND (presupuestos.SueCod IS NULL OR presupuestos.SueCod NOT IN (11, 12)) ";
+        $params = [];
+
+        if ($vndCod !== null) {
+            $where .= " AND presupuestos.VndCod = :vndCod ";
+            $params[':vndCod'] = $vndCod;
+        }
+        if (!empty($filtros['paciente'])) {
+            $where .= " AND presupuestos.PresupuestoPaciente LIKE :paciente ";
+            $params[':paciente'] = '%' . $filtros['paciente'] . '%';
+        }
+        if (!empty($filtros['medico'])) {
+            $where .= " AND medicos.mediconombre LIKE :medico ";
+            $params[':medico'] = '%' . $filtros['medico'] . '%';
+        }
+        if (!empty($filtros['hospCod'])) {
+            $where .= " AND presupuestos.HospCod = :hospCod ";
+            $params[':hospCod'] = $filtros['hospCod'];
+        }
+        if (!empty($filtros['sueCod'])) {
+            $where .= " AND presupuestos.SueCod = :sueCod ";
+            $params[':sueCod'] = $filtros['sueCod'];
+        }
+        if (!empty($filtros['fechaDesde'])) {
+            $where .= " AND presupuestos.PresupFecAut >= :fechaDesde ";
+            $params[':fechaDesde'] = $filtros['fechaDesde'];
+        }
+        if (!empty($filtros['fechaHasta'])) {
+            $where .= " AND presupuestos.PresupFecAut <= :fechaHasta ";
+            $params[':fechaHasta'] = $filtros['fechaHasta'];
+        }
+
+        return [$where, $params];
+    }
+
+    public function ListarParaCoordinador($vndCod = null, $filtros = [], $limit = 50, $offset = 0)
+    {
+        try {
+            list($where, $params) = $this->ArmarFiltrosCoordinador($vndCod, $filtros);
+
+            $sql = "SELECT presupuestos.cod_presupuesto, presupuestos.PresupuestoPaciente, presupuestos.cod_medico,
+                           medicos.mediconombre, presupuestos.HospCod, hospitales.HospDesc, presupuestos.VndCod, vtavnd.VndNom,
+                           presupuestos.EspCod, presupuestos.SueCod, sisespsub.SueDes, presupuestos.PresupFecAut,
+                           presupuestos.PresupFecSeg, presupuestos.PresupHorSeg
+                    FROM presupuestos
+                    LEFT JOIN medicos ON presupuestos.cod_medico = medicos.cod_medico
+                    LEFT JOIN hospitales ON presupuestos.HospCod = hospitales.HospCod
+                    LEFT JOIN vtavnd ON presupuestos.VndCod = vtavnd.VndCod
+                    LEFT JOIN sisespsub ON presupuestos.SueCod = sisespsub.SueCod
+                    $where
+                    ORDER BY presupuestos.cod_presupuesto DESC
+                    LIMIT :limit OFFSET :offset";
+
+            $stm = $this->pdo->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stm->bindValue($k, $v, PDO::PARAM_STR);
+            }
+            $stm->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stm->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stm->execute();
+            return $stm->fetchAll(PDO::FETCH_OBJ);
+        } catch(Exception $e) {
+            die($e->getMessage());
+        }
+    }
+
+    public function ContarParaCoordinador($vndCod = null, $filtros = [])
+    {
+        try {
+            list($where, $params) = $this->ArmarFiltrosCoordinador($vndCod, $filtros);
+
+            $sql = "SELECT count(*) FROM presupuestos
+                    LEFT JOIN medicos ON presupuestos.cod_medico = medicos.cod_medico
+                    LEFT JOIN hospitales ON presupuestos.HospCod = hospitales.HospCod
+                    LEFT JOIN vtavnd ON presupuestos.VndCod = vtavnd.VndCod
+                    LEFT JOIN sisespsub ON presupuestos.SueCod = sisespsub.SueCod
+                    $where";
+
+            $stm = $this->pdo->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stm->bindValue($k, $v, PDO::PARAM_STR);
+            }
+            $stm->execute();
+            return $stm->fetchColumn();
+        } catch(Exception $e) {
+            die($e->getMessage());
+        }
+    }
+
+    public function ProgramarCx($id, $fecha, $hora, $sueCod = 11)
+    {
+        try {
+            $sql = "UPDATE presupuestos SET PresupFecSeg = ?, PresupHorSeg = ?, SueCod = ? WHERE cod_presupuesto = ?";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute(array($fecha, $hora, $sueCod, $id));
+            return true;
+        } catch(Exception $e) {
+            die($e->getMessage());
+        }
+    }
+
+    public function MarcarCxRealizada($id)
+    {
+        try {
+            $sql = "UPDATE presupuestos SET SueCod = 12 WHERE cod_presupuesto = ?";
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute(array($id));
+            return true;
+        } catch(Exception $e) {
             die($e->getMessage());
         }
     }

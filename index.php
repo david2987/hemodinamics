@@ -6,6 +6,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 require_once 'model/database.php';
+require_once 'model/roles.php';
 
 // Determine controller
 if(!isset($_GET['p']))

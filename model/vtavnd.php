@@ -65,6 +65,16 @@ class Vtavnd {
         }
     }
 
+    public function ObtenerPorUsuario($usrCod) {
+        try {
+            $stm = $this->pdo->prepare("SELECT * FROM vtavnd WHERE VndUsr = ?");
+            $stm->execute(array($usrCod));
+            return $stm->fetch(PDO::FETCH_OBJ);
+        } catch(Exception $e) {
+            die($e->getMessage());
+        }
+    }
+
     public function Eliminar($id) {
         try {
             $stm = $this->pdo->prepare("DELETE FROM vtavnd WHERE VndCod = ?");
