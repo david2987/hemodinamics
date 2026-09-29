@@ -407,6 +407,64 @@ try {
             transform: translateY(-1px);
         }
 
+        /* Iconos de accion por fila (ej. Panel de Cirugia) */
+        .cx-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            row-gap: 8px;
+        }
+
+        .cx-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .cx-actions-divider {
+            width: 1px;
+            height: 22px;
+            background-color: #e2e8f0;
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .icon-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            text-decoration: none !important;
+            transition: background-color .15s ease, transform .15s ease;
+        }
+
+        .icon-action.icon-action--sm {
+            width: 28px;
+            height: 28px;
+            font-size: 15px;
+        }
+
+        .icon-action:hover,
+        .icon-action:focus {
+            transform: scale(1.12);
+            text-decoration: none !important;
+        }
+
+        .icon-action.is-teal { color: #206773; }
+        .icon-action.is-teal:hover { background-color: rgba(32, 103, 115, 0.12); }
+
+        .icon-action.is-green { color: #2e7d32; }
+        .icon-action.is-green:hover { background-color: rgba(46, 125, 50, 0.14); }
+
+        .icon-action.is-red { color: #c62828; }
+        .icon-action.is-red:hover { background-color: rgba(198, 40, 40, 0.12); }
+
         /* Hamburger & Mobile Sidebar */
         .sidebar-toggle {
             display: none;

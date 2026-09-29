@@ -140,7 +140,7 @@
             <th>Coordinador</th>
             <th>Fecha / Hora CX</th>
             <th>Materiales a necesitar</th>
-            <th style="width:190px;"></th>
+            <th style="width:210px;"></th>
         </tr>
     </thead>
     <tbody>
@@ -158,30 +158,52 @@
             ?></td>
             <td><?php echo nl2br(htmlspecialchars((string)$r->PlcMat)); ?></td>
             <td>
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
-                    <a title="Ver Presupuesto PDF" href="?c=presupuesto&a=VerPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><i class="fa-solid fa-file-invoice" style="color:#206773;"></i></a>
-                    <a title="Ver Remito PDF" href="?c=presupuesto&a=RemitoPDF&id=<?php echo $r->cod_presupuesto; ?>" target="_blank"><i class="fa-solid fa-file-pen" style="color:#206773;"></i></a>
-                    <a title="Imprimir Etiquetas" href="?c=cirugia&a=EtiquetasPDF&id=<?php echo $r->PlcCod; ?>" target="_blank"><i class="fa-solid fa-tags" style="color:#206773;"></i></a>
-                    <a href="#" class="btn-aceptar-cx" title="Reprogramar CX"
-                       data-id="<?php echo $r->cod_presupuesto; ?>"
-                       data-fecha="<?php echo (!empty($r->PlcFec) && $r->PlcFec != '0000-00-00') ? $r->PlcFec : ''; ?>"
-                       data-hora="<?php echo htmlspecialchars($r->PlcHor); ?>"
-                       data-materiales="<?php echo htmlspecialchars((string)$r->PlcMat); ?>">
-                        <i class="fa-solid fa-calendar-days" style="color:#206773;"></i>
-                    </a>
-                    <a href="#" class="btn-consumo" title="Cargar Consumo"
-                       data-plccod="<?php echo $r->PlcCod; ?>"
-                       data-consumo="<?php echo htmlspecialchars((string)$r->PlcMatCx); ?>">
-                        <i class="fa-solid fa-boxes-packing" style="color:#206773;"></i>
-                    </a>
-                    <a href="#" class="btn-facturas" title="Gestionar Facturas" data-plccod="<?php echo $r->PlcCod; ?>">
-                        <i class="fa-solid fa-file-invoice-dollar" style="color:#206773;"></i>
-                    </a>
-                    <?php if ($r->PlcCxRea != 'S'): ?>
-                        <a href="#" class="btn-marcar-realizada" data-plccod="<?php echo $r->PlcCod; ?>" data-codpresupuesto="<?php echo $r->cod_presupuesto; ?>" title="Marcar como Realizada">
-                            <i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i>
+                <div class="cx-actions">
+                    <div class="cx-actions-group cx-actions-docs">
+                        <a class="icon-action icon-action--sm is-teal" target="_blank"
+                           href="?c=presupuesto&a=VerPDF&id=<?php echo $r->cod_presupuesto; ?>"
+                           title="Ver Presupuesto PDF">
+                            <i class="fa-solid fa-file-invoice"></i>
                         </a>
-                    <?php endif; ?>
+                        <a class="icon-action icon-action--sm is-teal" target="_blank"
+                           href="?c=presupuesto&a=RemitoPDF&id=<?php echo $r->cod_presupuesto; ?>"
+                           title="Ver Remito PDF">
+                            <i class="fa-solid fa-file-pen"></i>
+                        </a>
+                        <a class="icon-action icon-action--sm is-teal" target="_blank"
+                           href="?c=cirugia&a=EtiquetasPDF&id=<?php echo $r->PlcCod; ?>"
+                           title="Imprimir Etiquetas">
+                            <i class="fa-solid fa-tags"></i>
+                        </a>
+                    </div>
+
+                    <span class="cx-actions-divider"></span>
+
+                    <div class="cx-actions-group cx-actions-manage">
+                        <a href="#" class="icon-action is-teal btn-aceptar-cx" title="Reprogramar CX"
+                           data-id="<?php echo $r->cod_presupuesto; ?>"
+                           data-fecha="<?php echo (!empty($r->PlcFec) && $r->PlcFec != '0000-00-00') ? $r->PlcFec : ''; ?>"
+                           data-hora="<?php echo htmlspecialchars($r->PlcHor); ?>"
+                           data-materiales="<?php echo htmlspecialchars((string)$r->PlcMat); ?>">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </a>
+                        <a href="#" class="icon-action is-teal btn-consumo" title="Cargar Consumo"
+                           data-plccod="<?php echo $r->PlcCod; ?>"
+                           data-consumo="<?php echo htmlspecialchars((string)$r->PlcMatCx); ?>">
+                            <i class="fa-solid fa-boxes-packing"></i>
+                        </a>
+                        <a href="#" class="icon-action is-teal btn-facturas" title="Gestionar Facturas"
+                           data-plccod="<?php echo $r->PlcCod; ?>">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </a>
+                        <?php if ($r->PlcCxRea != 'S'): ?>
+                            <a href="#" class="icon-action is-green btn-marcar-realizada" title="Marcar como Realizada"
+                               data-plccod="<?php echo $r->PlcCod; ?>"
+                               data-codpresupuesto="<?php echo $r->cod_presupuesto; ?>">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </td>
         </tr>
